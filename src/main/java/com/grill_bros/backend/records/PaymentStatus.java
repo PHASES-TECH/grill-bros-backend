@@ -15,7 +15,7 @@ public enum PaymentStatus {
 
     public boolean canTransitionTo(PaymentStatus next) {
         return switch (this) {
-            case INITIATED -> next == PENDING;
+            case INITIATED -> next == PENDING || next == FAILED;
             case PENDING   -> next == SUCCESSFUL || next == FAILED
                     || next == CANCELLED  || next == TIMEOUT;
             default        -> false;

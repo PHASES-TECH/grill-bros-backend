@@ -1,5 +1,6 @@
 package com.grill_bros.backend.model;
 
+import com.grill_bros.backend.records.PaymentEventType;
 import com.grill_bros.backend.records.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -37,7 +38,7 @@ public class PaymentEvent {
     private Payment payment;
 
     @Column(name = "event_type", nullable = false, length = 100)
-    private String eventType;
+    private PaymentEventType eventType;
 
     @Column(name = "old_status", length = 50)
     private String oldStatus;
@@ -55,7 +56,7 @@ public class PaymentEvent {
 
     // ── Factory ───────────────────────────────────────────────────────────────
 
-    public static PaymentEvent of(Payment payment, String eventType,
+    public static PaymentEvent of(Payment payment, PaymentEventType eventType,
                                   PaymentStatus oldStatus, PaymentStatus newStatus,
                                   String payload) {
         PaymentEvent e  = new PaymentEvent();
@@ -66,5 +67,50 @@ public class PaymentEvent {
         e.payload       = payload;
         e.createdAt     = Instant.now();
         return e;
+    }
+
+    public static PaymentEvent statusChange(
+            Payment payment,
+            PaymentStatus oldStatus,
+            PaymentStatus newStatus,
+            String payload
+    ) {
+        return of(payment,
+                PaymentEventType.WEBHOOK_RECEIVED,
+                oldStatus,
+                newStatus,
+                payload
+        );
+    }
+
+    public static PaymentEvent initiated(Payment payment) {
+        return of(payment,
+                PaymentEventType.PAYMENT_INITIATED,
+                null,
+                payment.getStatus(),
+                null
+        );
+    }
+
+    public static PaymentEvent requestSent(Payment payment, String payload) {
+        return of(payment,
+                PaymentEventType.REQUEST_TO_PAY_SENT,
+                null,
+                payment.getStatus(),
+                payload
+        );
+    }
+
+    public static PaymentEvent failed(
+            Payment payment,
+            PaymentStatus oldStatus,
+            String reason
+    ) {
+        return of(payment,
+                PaymentEventType.PAYMENT_FAILED,
+                oldStatus,
+                PaymentStatus.FAILED,
+                reason
+        );
     }
 }

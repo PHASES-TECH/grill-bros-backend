@@ -71,10 +71,6 @@ public class DashboardService {
                 .build();
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // Revenue breakdown by date range — cached per range key
-    // ══════════════════════════════════════════════════════════════════════════
-
     public RevenueResponse getRevenue(LocalDate from, LocalDate to) {
         String cacheKey = RedisKeys.adminRevenueRange(from.toString(), to.toString());
 
@@ -97,7 +93,7 @@ public class DashboardService {
         List<Object[]> rawDaily = orderRepository.dailyRevenueBetween(fromInstant, toInstant);
         List<RevenueResponse.DailyRevenue> daily = rawDaily.stream()
                 .map(row -> RevenueResponse.DailyRevenue.builder()
-                        .day(((java.sql.Date) row[0]).toLocalDate())
+                        .day((LocalDate) row[0])
                         .orderCount(((Number) row[1]).longValue())
                         .revenue(new BigDecimal(row[2].toString()))
                         .build())
@@ -112,10 +108,6 @@ public class DashboardService {
                 .dailyBreakdown(daily)
                 .build();
     }
-
-    // ══════════════════════════════════════════════════════════════════════════
-    // Top items by quantity sold in last 30 days
-    // ══════════════════════════════════════════════════════════════════════════
 
     public List<TopItemResponse> getTopItems(int limit) {
         Instant since = Instant.now().minus(30, java.time.temporal.ChronoUnit.DAYS);

@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -39,6 +40,20 @@ public class UserSessionService implements IUserSessionService {
                     session.setLastActivityTime(LocalDateTime.now());
                     sessionRepository.save(session);
                 });
+    }
+
+    @Override
+    @Transactional
+    public UserSession rotateSession(String oldAccessToken, String newAccessToken) {
+
+        UserSession session = sessionRepository
+                .findByTokenAndIsActiveTrue(oldAccessToken)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+
+        session.setToken(newAccessToken);
+        session.setLastActivityTime(LocalDateTime.now());
+
+        return sessionRepository.save(session);
     }
 
     @Override

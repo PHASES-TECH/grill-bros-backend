@@ -175,9 +175,7 @@ public class AuthController {
 
     @GetMapping("/auth/me")
     public ResponseEntity<?> getCurrentUser(HttpServletRequest request, Authentication authentication) {
-//        String authHeader = request.getHeader("Authorization");
-////        System.out.println("Authorization header: " + authHeader);
-//
+
         if (authentication == null) {
             return ResponseEntity.status(401).body("No authentication");
         }
@@ -190,6 +188,8 @@ public class AuthController {
 
     @PostMapping("/auth/refresh")
     public ResponseEntity<?> refreshToken(HttpServletRequest request) {
+
+//        String accessToken = cookieUtil.extractToken(request);
 
         String refreshTokenValue = cookieUtil.extractRefreshToken(request);
 
@@ -207,7 +207,7 @@ public class AuthController {
 
         RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user.getId());
 
-        userSessionService.createSession(user.getEmail(), newAccessToken);
+//        userSessionService.rotateSession(accessToken, newAccessToken);
 
         ResponseCookie accessCookie = ResponseCookie.from("access_token", newAccessToken)
                 .httpOnly(true)
@@ -240,13 +240,9 @@ public class AuthController {
             userSessionService.endSession(accessToken);
         }
 
-        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal userPrincipal) {
-            Users user = userPrincipal.getUser();
-            refreshTokenService.deleteByUser(user);
-        }
-
-//        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-//        Users user = userPrincipal.getUser();
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        Users user = userPrincipal.getUser();
+        refreshTokenService.deleteByUser(user);
 
         ResponseCookie deleteAccess = ResponseCookie.from("access_token", "")
                 .httpOnly(true)

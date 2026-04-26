@@ -5,6 +5,7 @@ import com.grill_bros.backend.records.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -16,34 +17,29 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface OrderRepository extends JpaRepository<Order, String> {
-
-    // ── Public lookups ────────────────────────────────────────────────────────
+public interface OrderRepository extends JpaRepository<Order, String>, JpaSpecificationExecutor<Order> {
 
     Optional<Order> findByOrderNumber(String orderNumber);
 
     boolean existsByOrderNumber(String orderNumber);
 
-    // ── Admin list with filters ───────────────────────────────────────────────
+//    @Query("""
+//        SELECT o FROM Order o
+//        WHERE (:status       IS NULL OR o.status          = :status)
+//          AND (:phone        IS NULL OR o.customerPhone   LIKE CONCAT('%',:phone,'%'))
+//          AND (:customerName IS NULL OR LOWER(o.customerName) LIKE LOWER(CONCAT('%',:customerName,'%')))
+//          AND (:from         IS NULL OR o.createdAt       >= :from)
+//          AND (:to           IS NULL OR o.createdAt       <= :to)
+//        ORDER BY o.createdAt DESC
+//        """)
+//    Page<Order> findAllForAdmin(
+//            @Param("status") OrderStatus status,
+//            @Param("phone")        String phone,
+//            @Param("customerName") String customerName,
+//            @Param("from")         Instant from,
+//            @Param("to")           Instant to,
+//            Pageable pageable);
 
-    @Query("""
-        SELECT o FROM Order o
-        WHERE (:status       IS NULL OR o.status          = :status)
-          AND (:phone        IS NULL OR o.customerPhone   LIKE CONCAT('%',:phone,'%'))
-          AND (:customerName IS NULL OR LOWER(o.customerName) LIKE LOWER(CONCAT('%',:customerName,'%')))
-          AND (:from         IS NULL OR o.createdAt       >= :from)
-          AND (:to           IS NULL OR o.createdAt       <= :to)
-        ORDER BY o.createdAt DESC
-        """)
-    Page<Order> findAllForAdmin(
-            @Param("status") OrderStatus status,
-            @Param("phone")        String phone,
-            @Param("customerName") String customerName,
-            @Param("from")         Instant from,
-            @Param("to")           Instant to,
-            Pageable pageable);
-
-    /** Fetch order with items in a single query — avoids N+1 on detail view */
     @Query("""
         SELECT DISTINCT o FROM Order o
         LEFT JOIN FETCH o.items oi

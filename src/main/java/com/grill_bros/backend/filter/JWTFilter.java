@@ -54,6 +54,7 @@ public class JWTFilter extends OncePerRequestFilter {
                 || path.equals("/api/v1/auth/register/admin")
                 || path.equals("/api/v1/auth/logout")
                 || path.equals("/api/v1/auth/register/verify-phone")
+                || path.equals("/api/v1/auth/refresh")
         ) {
             filterChain.doFilter(request, response);
             return;

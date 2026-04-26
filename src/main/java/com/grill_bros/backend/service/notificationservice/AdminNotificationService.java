@@ -18,14 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * Manages Server-Sent Events connections for the admin dashboard.
- *
- * Design:
- *  - CopyOnWriteArrayList is safe for concurrent add/remove without locking read loops.
- *  - Events are also pushed to Redis list so reconnecting admins catch up on missed events.
- *  - Async listener so the business transaction commits before notification fires.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor

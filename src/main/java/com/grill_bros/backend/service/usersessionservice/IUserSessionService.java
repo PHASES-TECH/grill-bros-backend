@@ -7,6 +7,7 @@ import java.util.List;
 public interface IUserSessionService {
     UserSession createSession(String email, String token);
     void updateLastActivity(String token);
+    UserSession rotateSession(String oldToken, String newToken);
     void endSession(String token);
     List<UserSession> getActiveSessions(String email);
     void endAllUserSessions(String email);

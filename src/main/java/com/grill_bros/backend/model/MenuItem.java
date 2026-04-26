@@ -2,6 +2,7 @@ package com.grill_bros.backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Type;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -51,7 +52,7 @@ public class MenuItem extends BaseEntity {
     @Column(name = "sort_order", nullable = false)
     private int sortOrder = 0;
 
-    @Column(name = "tags", columnDefinition = "jsonb")
+    @Column(name = "tags", columnDefinition = "text[]")
     private List<String> tags = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
