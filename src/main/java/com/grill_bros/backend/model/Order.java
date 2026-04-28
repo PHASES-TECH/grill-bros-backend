@@ -98,9 +98,10 @@ public class Order extends BaseEntity {
     }
 
     public void calculateTotals() {
-        this.subtotal    = items.stream()
-                .map(OrderItem::getLineTotal)
+        this.subtotal = items.stream()
+                .map(OrderItem::calculateLineTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         this.totalAmount = this.subtotal;
     }
 

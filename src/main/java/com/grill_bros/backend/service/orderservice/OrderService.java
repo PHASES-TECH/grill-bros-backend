@@ -8,12 +8,10 @@ import com.grill_bros.backend.events.OrderCreatedEvent;
 import com.grill_bros.backend.events.OrderStatusChangedEvent;
 import com.grill_bros.backend.exceptions.InvalidStateTransitionException;
 import com.grill_bros.backend.exceptions.ResourceNotFoundException;
-import com.grill_bros.backend.model.MenuItem;
-import com.grill_bros.backend.model.Order;
-import com.grill_bros.backend.model.OrderItem;
-import com.grill_bros.backend.model.Users;
+import com.grill_bros.backend.model.*;
 import com.grill_bros.backend.records.OrderStatus;
 import com.grill_bros.backend.repository.MenuItemRepository;
+import com.grill_bros.backend.repository.ModifierRepository;
 import com.grill_bros.backend.repository.OrderRepository;
 import com.grill_bros.backend.repository.UserRepository;
 import com.grill_bros.backend.service.notificationservice.AdminNotificationService;
@@ -32,7 +30,9 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -46,6 +46,7 @@ public class OrderService {
     private final OrderNumberGenerator orderNumberGenerator;
     private final ApplicationEventPublisher eventPublisher;
     private final SmsProviderService smsProviderService;
+    private final ModifierRepository modifierRepository;
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest req) {
@@ -132,7 +133,17 @@ public class OrderService {
                 throw new InvalidStateTransitionException(
                         "Item '" + menuItem.getName() + "' is currently unavailable");
             }
-            order.addItem(OrderItem.from(menuItem, lineReq.getQuantity()));
+
+            OrderItem orderItem = OrderItem.from(menuItem, lineReq.getQuantity());
+
+            List<OrderItemModifier> modifiers = buildModifiers(
+                    lineReq.getModifierIds(),
+                    menuItem,
+                    orderItem
+            );
+
+            orderItem.setModifiers(modifiers);
+            order.addItem(orderItem);
         }
 
         String message = String.format(
@@ -144,5 +155,37 @@ public class OrderService {
 
         order.calculateTotals();
         return order;
+    }
+
+    private List<OrderItemModifier> buildModifiers(
+            List<UUID> modifierIds,
+            MenuItem menuItem,
+            OrderItem orderItem
+    ) {
+
+        if (modifierIds == null || modifierIds.isEmpty()) return List.of();
+
+        List<Modifier> modifiers = modifierRepository.findAllById(modifierIds);
+
+        Set<UUID> validGroupIds = menuItem.getModifierGroups()
+                .stream()
+                .map(ModifierGroup::getId)
+                .collect(Collectors.toSet());
+
+        for (Modifier m : modifiers) {
+            if (!validGroupIds.contains(m.getGroup().getId())) {
+                throw new IllegalArgumentException("Invalid modifier for this item");
+            }
+        }
+
+        return modifiers.stream()
+                .map(m -> {
+                    OrderItemModifier oim = new OrderItemModifier();
+                    oim.setOrderItem(orderItem);
+                    oim.setModifier(m);
+                    oim.setPrice(m.getPrice());
+                    return oim;
+                })
+                .collect(Collectors.toList());
     }
 }

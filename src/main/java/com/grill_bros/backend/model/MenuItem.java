@@ -59,6 +59,9 @@ public class MenuItem extends BaseEntity {
     @JoinColumn(name = "category_id", nullable = false)
     private MenuCategory category;
 
+    @OneToMany(mappedBy = "menuItem", cascade = CascadeType.ALL)
+    private List<ModifierGroup> modifierGroups = new ArrayList<>();
+
 
     public static MenuItem create(String name, BigDecimal price, MenuCategory category) {
         MenuItem item     = new MenuItem();

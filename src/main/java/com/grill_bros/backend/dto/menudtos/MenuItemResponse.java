@@ -1,6 +1,9 @@
 package com.grill_bros.backend.dto.menudtos;
 
+import com.grill_bros.backend.dto.modifierdtos.ModifierGroupResponse;
+import com.grill_bros.backend.dto.modifierdtos.ModifierResponse;
 import com.grill_bros.backend.model.MenuItem;
+import com.grill_bros.backend.model.ModifierGroup;
 import lombok.Builder;
 import lombok.Data;
 
@@ -26,6 +29,7 @@ public class MenuItemResponse {
     private String      categoryName;
     private Instant     createdAt;
     private Instant     updatedAt;
+    private List<ModifierGroupResponse>  modifierGroups;
 
     public static MenuItemResponse from(MenuItem m) {
         return MenuItemResponse.builder()
@@ -40,6 +44,11 @@ public class MenuItemResponse {
                 .tags(m.getTags())
                 .categoryId(m.getCategory().getId())
                 .categoryName(m.getCategory().getName())
+                .modifierGroups(m.getModifierGroups() != null
+                        ? m.getModifierGroups().stream()
+                        .map(ModifierGroupResponse::from)
+                        .toList()
+                        : List.of())
                 .createdAt(m.getCreatedAt())
                 .updatedAt(m.getUpdatedAt())
                 .build();

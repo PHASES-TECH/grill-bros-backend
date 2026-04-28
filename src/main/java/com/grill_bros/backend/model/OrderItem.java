@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(
@@ -54,13 +56,29 @@ public class OrderItem extends BaseEntity {
     @Column(name = "line_total", nullable = false, precision = 10, scale = 2)
     private BigDecimal lineTotal;
 
+    @OneToMany(mappedBy = "orderItem", cascade = CascadeType.ALL)
+    private List<OrderItemModifier> modifiers = new ArrayList<>();
+
     public static OrderItem from(MenuItem menuItem, int quantity) {
         OrderItem oi  = new OrderItem();
         oi.menuItem   = menuItem;
         oi.itemName   = menuItem.getName();
         oi.unitPrice  = menuItem.getPrice();
         oi.quantity   = quantity;
-        oi.lineTotal  = menuItem.getPrice().multiply(BigDecimal.valueOf(quantity));
         return oi;
+    }
+
+    public BigDecimal calculateLineTotal() {
+
+        BigDecimal base = unitPrice.multiply(BigDecimal.valueOf(quantity));
+
+        BigDecimal modifiersTotal = modifiers.stream()
+                .map(OrderItemModifier::getPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .multiply(BigDecimal.valueOf(quantity));
+
+        this.lineTotal = base.add(modifiersTotal);
+
+        return this.lineTotal;
     }
 }
