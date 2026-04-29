@@ -112,6 +112,7 @@ public class OrderService {
         return OrderResponse.from(saved);
     }
 
+    @Transactional
     private Order buildOrder(CreateOrderRequest req, Users placedBy) {
         String orderNumber = orderNumberGenerator.generate();
         Order order = Order.create(
@@ -157,6 +158,7 @@ public class OrderService {
         return order;
     }
 
+    @Transactional
     private List<OrderItemModifier> buildModifiers(
             List<UUID> modifierIds,
             MenuItem menuItem,

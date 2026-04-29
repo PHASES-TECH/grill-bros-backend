@@ -1,0 +1,67 @@
+package com.grill_bros.backend.service.utilsservice;
+
+import com.grill_bros.backend.model.Payment;
+import com.grill_bros.backend.model.Receipt;
+import com.grill_bros.backend.records.ReceiptStatus;
+import com.grill_bros.backend.repository.ReceiptRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class ReceiptService {
+
+    private final ReceiptRepository receiptRepository;
+    private final PdfService pdfService;
+    private final EmailService emailService;
+
+    public void generateAndSendReceipt(Payment payment) {
+
+        // 🔒 Prevent duplicate receipts
+        if (receiptRepository.findByPaymentId(payment.getId()).isPresent()) {
+            return;
+        }
+
+        // 1. Create receipt
+        Receipt receipt = Receipt.builder()
+                .reference(generateReference())
+                .amount(payment.getAmount())
+                .currency("GHS")
+                .payment(payment)
+                .orderId(payment.getOrder().getId())
+                .customerName(payment.getOrder().getCustomerName())
+                .customerEmail(payment.getOrder().getCustomerEmail())
+                .customerPhone(payment.getOrder().getCustomerPhone())
+                .status(ReceiptStatus.GENERATED)
+                .issuedAt(Instant.now())
+                .build();
+
+        receiptRepository.save(receipt);
+
+        try {
+            // 2. Generate PDF
+            byte[] pdfBytes = pdfService.generateReceiptPdf(receipt);
+
+            // 3. Send email
+            emailService.sendReceiptEmail(
+                    receipt.getCustomerEmail(),
+                    receipt,
+                    pdfBytes
+            );
+
+            receipt.setStatus(ReceiptStatus.SENT);
+
+        } catch (Exception e) {
+            receipt.setStatus(ReceiptStatus.FAILED);
+        }
+
+        receiptRepository.save(receipt);
+    }
+
+    private String generateReference() {
+        return "RCPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
+}

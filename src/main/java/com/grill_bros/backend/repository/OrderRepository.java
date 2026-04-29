@@ -23,6 +23,8 @@ public interface OrderRepository extends JpaRepository<Order, String>, JpaSpecif
 
     boolean existsByOrderNumber(String orderNumber);
 
+    long countByCreatedAtBetween(Instant start, Instant end);
+
 //    @Query("""
 //        SELECT o FROM Order o
 //        WHERE (:status       IS NULL OR o.status          = :status)

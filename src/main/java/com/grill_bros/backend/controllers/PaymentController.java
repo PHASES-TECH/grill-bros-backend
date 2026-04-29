@@ -30,7 +30,7 @@ public class PaymentController {
     }
 
     @PermitAll
-    @GetMapping("/{externalId}/payment-status")
+    @PatchMapping("/{externalId}/payment-status")
     public ResponseEntity<?> getPaymentStatus(@PathVariable String externalId) {
         return ResponseEntity.ok(paymentService.checkAndUpdateStatus(externalId));
     }

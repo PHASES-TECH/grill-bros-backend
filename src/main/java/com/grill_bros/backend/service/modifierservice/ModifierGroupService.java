@@ -5,11 +5,17 @@ import com.grill_bros.backend.dto.modifierdtos.ModifierGroupResponse;
 import com.grill_bros.backend.dto.modifierdtos.ModifierResponse;
 import com.grill_bros.backend.exceptions.ResourceNotFoundException;
 import com.grill_bros.backend.model.MenuItem;
+import com.grill_bros.backend.model.Modifier;
 import com.grill_bros.backend.model.ModifierGroup;
 import com.grill_bros.backend.repository.MenuItemRepository;
 import com.grill_bros.backend.repository.ModifierGroupRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -32,5 +38,35 @@ public class ModifierGroupService {
 
         groupRepo.save(group);
         return ModifierGroupResponse.from(group);
+    }
+
+    public List<ModifierResponse> getModifiersForGroup(UUID menuItemId) {
+        List<ModifierGroup> modifierGroups = groupRepo.findByMenuItemId(menuItemId);
+
+        if (modifierGroups == null || modifierGroups.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<ModifierResponse> responseList = new ArrayList<>();
+
+        for (ModifierGroup group : modifierGroups) {
+            List<Modifier> modifiers = group.getModifiers();
+
+            if (modifiers == null || modifiers.isEmpty()) continue;
+
+            for (Modifier modifier : modifiers) {
+                ModifierResponse response = ModifierResponse.builder()
+                        .id(modifier.getId())
+                        .name(modifier.getName())
+                        .price(modifier.getPrice())
+                        .groupId(group.getId())
+                        .groupName(group.getName())
+                        .build();
+
+                responseList.add(response);
+            }
+        }
+
+        return responseList;
     }
 }

@@ -15,7 +15,7 @@ public class ModifierResponse {
     private String name;
     private BigDecimal price;
     private boolean active;
-
+    private String groupName;
     private UUID groupId;
 
     public static ModifierResponse from(Modifier modifier) {
@@ -25,6 +25,7 @@ public class ModifierResponse {
                 .price(modifier.getPrice())
                 .active(modifier.isActive())
                 .groupId(modifier.getGroup().getId())
+                .groupName(modifier.getGroup().getName())
                 .build();
     }
 }

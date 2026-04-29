@@ -18,11 +18,13 @@ import com.grill_bros.backend.repository.OrderRepository;
 import com.grill_bros.backend.repository.PaymentEventRepository;
 import com.grill_bros.backend.repository.PaymentRepository;
 import com.grill_bros.backend.service.cacheservice.CacheService;
+import com.grill_bros.backend.service.utilsservice.ReceiptService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Map;
 import java.util.UUID;
@@ -36,6 +38,7 @@ public class PaymentService implements IPaymentService {
     private final PaymentEventRepository paymentEventRepository;
     private final MoMoClient momoClient;
     private final CacheService cache;
+    private final ReceiptService receiptService;
 
     @Override
     @Transactional
@@ -113,6 +116,12 @@ public class PaymentService implements IPaymentService {
     public PaymentStatusResponse checkAndUpdateStatus(String externalId) {
         String momoStatus = momoClient.getPaymentStatus(externalId);
 
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        String payload = objectMapper.writeValueAsString(
+                Map.of("momoStatus", momoStatus)
+        );
+
         Payment payment = paymentRepository.findByExternalId(externalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment"));
 
@@ -134,8 +143,12 @@ public class PaymentService implements IPaymentService {
             paymentRepository.save(payment);
 
             paymentEventRepository.save(
-                    PaymentEvent.statusChange(payment, oldStatus, newStatus, momoStatus)
+                    PaymentEvent.statusChange(payment, oldStatus, newStatus, payload)
             );
+        }
+
+        if(newStatus == PaymentStatus.SUCCESSFUL) {
+            receiptService.generateAndSendReceipt(payment);
         }
 
         return PaymentStatusResponse.builder()
