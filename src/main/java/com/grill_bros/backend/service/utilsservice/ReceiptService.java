@@ -1,13 +1,18 @@
 package com.grill_bros.backend.service.utilsservice;
 
+import com.grill_bros.backend.dto.paymentdto.PaymentReceiptResponse;
+import com.grill_bros.backend.dto.paymentdto.PaymentResponse;
 import com.grill_bros.backend.model.Payment;
 import com.grill_bros.backend.model.Receipt;
 import com.grill_bros.backend.records.ReceiptStatus;
 import com.grill_bros.backend.repository.ReceiptRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -17,6 +22,10 @@ public class ReceiptService {
     private final ReceiptRepository receiptRepository;
     private final PdfService pdfService;
     private final EmailService emailService;
+
+    public Page<PaymentReceiptResponse> getAllPaymentReceipts(Pageable pageable) {
+        return receiptRepository.findAll(pageable).map(PaymentReceiptResponse::summary);
+    }
 
     public void generateAndSendReceipt(Payment payment) {
 

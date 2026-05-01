@@ -149,7 +149,7 @@ public class AuthController {
 //                .sameSite("SameSite")
                 .path("/")
 //                .domain("localhost")
-                .maxAge(Duration.ofMinutes(30))
+                .maxAge(Duration.ofHours(24))
                 .build();
 
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())
@@ -159,7 +159,7 @@ public class AuthController {
 //                .sameSite("SameSite")
                 .path("/")
 //                .domain("localhost")
-                .maxAge(Duration.ofHours(24))
+                .maxAge(Duration.ofDays(30))
                 .build();
 
 
@@ -214,7 +214,7 @@ public class AuthController {
                 .secure(true)
                 .sameSite("None")
                 .path("/")
-                .maxAge(Duration.ofMinutes(30))
+                .maxAge(Duration.ofHours(24))
                 .build();
 
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", newRefreshToken.getToken())
@@ -222,7 +222,7 @@ public class AuthController {
                 .secure(true)
                 .sameSite("None")
                 .path("/")
-                .maxAge(Duration.ofHours(24))
+                .maxAge(Duration.ofDays(30))
                 .build();
 
         return ResponseEntity.ok()

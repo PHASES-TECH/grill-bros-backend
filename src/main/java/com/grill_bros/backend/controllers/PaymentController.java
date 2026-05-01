@@ -4,8 +4,10 @@ import com.grill_bros.backend.common.ApiResponse;
 import com.grill_bros.backend.common.PagedResponse;
 import com.grill_bros.backend.dto.menudtos.CategoryResponse;
 import com.grill_bros.backend.dto.paymentdto.InitiatePaymentRequest;
+import com.grill_bros.backend.dto.paymentdto.PaymentReceiptResponse;
 import com.grill_bros.backend.dto.paymentdto.PaymentResponse;
 import com.grill_bros.backend.service.paymentservice.PaymentService;
+import com.grill_bros.backend.service.utilsservice.ReceiptService;
 import jakarta.annotation.security.PermitAll;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +25,7 @@ import java.util.List;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final ReceiptService receiptService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PagedResponse<PaymentResponse>>> getAllPayments(
@@ -38,6 +41,26 @@ public class PaymentController {
         );
 
         Page<PaymentResponse> result = paymentService.getAllPayments(pageable);
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(PagedResponse.of(result))
+        );
+    }
+
+    @GetMapping("/receipts")
+    public ResponseEntity<ApiResponse<PagedResponse<PaymentReceiptResponse>>> getAllPaymentReceipts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        size = Math.min(size, 100);
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("createdAt").descending()
+        );
+
+        Page<PaymentReceiptResponse> result = receiptService.getAllPaymentReceipts(pageable);
 
         return ResponseEntity.ok(
                 ApiResponse.ok(PagedResponse.of(result))
