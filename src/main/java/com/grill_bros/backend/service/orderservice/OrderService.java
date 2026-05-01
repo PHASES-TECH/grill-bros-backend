@@ -10,12 +10,9 @@ import com.grill_bros.backend.exceptions.InvalidStateTransitionException;
 import com.grill_bros.backend.exceptions.ResourceNotFoundException;
 import com.grill_bros.backend.model.*;
 import com.grill_bros.backend.records.OrderStatus;
-import com.grill_bros.backend.repository.MenuItemRepository;
-import com.grill_bros.backend.repository.ModifierRepository;
-import com.grill_bros.backend.repository.OrderRepository;
-import com.grill_bros.backend.repository.UserRepository;
-import com.grill_bros.backend.service.notificationservice.AdminNotificationService;
+import com.grill_bros.backend.repository.*;
 import com.grill_bros.backend.service.smsservice.SmsProviderService;
+import com.grill_bros.backend.service.userservice.AuthContextService;
 import com.grill_bros.backend.specifications.OrderSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,10 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -47,14 +41,29 @@ public class OrderService {
     private final ApplicationEventPublisher eventPublisher;
     private final SmsProviderService smsProviderService;
     private final ModifierRepository modifierRepository;
+    private final CustomerRepository customerRepository;
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest req) {
         Order order = buildOrder(req, null);
+        addCustomer(req);
         Order saved = orderRepository.save(order);
         log.info("Order created: {} for customer: {}", saved.getOrderNumber(), saved.getCustomerPhone());
         eventPublisher.publishEvent(new OrderCreatedEvent(this, saved));
         return OrderResponse.from(saved);
+    }
+
+    public void addCustomer(CreateOrderRequest req) {
+
+        customerRepository.findByPhoneNumber(req.getCustomerPhone())
+                .orElseGet(() -> {
+                    Customer customer = new Customer();
+                    customer.setFullName(req.getCustomerName());
+                    customer.setPhoneNumber(req.getCustomerPhone());
+                    customer.setEmail(req.getCustomerEmail());
+
+                    return customerRepository.save(customer);
+                });
     }
 
     public OrderResponse getByOrderNumber(String orderNumber) {

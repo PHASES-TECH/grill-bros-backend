@@ -6,8 +6,10 @@ import lombok.Data;
 
 import java.time.Instant;
 
+@Data
 public class AdminUserResponse {
 
+    // Getters
     private String id;
     private String fullName;
     private String email;
@@ -54,14 +56,4 @@ public class AdminUserResponse {
         );
     }
 
-    // Getters
-    public String getId() { return id; }
-    public String getFullName() { return fullName; }
-    public String getEmail() { return email; }
-    public String getPhoneNumber() { return phoneNumber; }
-    public Role getRole() { return role; }
-    public boolean isVerified() { return isVerified; }
-    public boolean isPhoneNumberVerified() { return isPhoneNumberVerified; }
-    public boolean isActive() { return active; }
-    public Instant getLastLoginAt() { return lastLoginAt; }
 }

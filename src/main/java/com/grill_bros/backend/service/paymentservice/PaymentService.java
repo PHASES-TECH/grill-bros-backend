@@ -20,6 +20,8 @@ import com.grill_bros.backend.repository.PaymentRepository;
 import com.grill_bros.backend.service.cacheservice.CacheService;
 import com.grill_bros.backend.service.utilsservice.ReceiptService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
@@ -44,7 +46,7 @@ public class PaymentService implements IPaymentService {
     @Transactional
     public PaymentInitiatedResponse initiatePayment(InitiatePaymentRequest request, String idempotencyKey) {
         String idemCacheKey = RedisKeys.paymentIdem(idempotencyKey);
-        var cached = cache.get(idemCacheKey, PaymentInitiatedResponse .class);
+        var cached = cache.get(idemCacheKey, PaymentInitiatedResponse.class);
         if (cached.isPresent()) return cached.get();
 
         Order order = orderRepository.findById(request.getOrderId())
@@ -147,7 +149,7 @@ public class PaymentService implements IPaymentService {
             );
         }
 
-        if(newStatus == PaymentStatus.SUCCESSFUL) {
+        if (newStatus == PaymentStatus.SUCCESSFUL) {
             receiptService.generateAndSendReceipt(payment);
         }
 
@@ -161,25 +163,29 @@ public class PaymentService implements IPaymentService {
                 .build();
     }
 
+    public Page<PaymentResponse> getAllPayments(Pageable pageable) {
+        return paymentRepository.findAll(pageable).map(PaymentResponse::summary);
+    }
+
     private PaymentStatus mapMoMoStatus(String status) {
         if (status == null) return PaymentStatus.PENDING;
 
         return switch (status.toUpperCase()) {
             case "SUCCESSFUL" -> PaymentStatus.SUCCESSFUL;
-            case "FAILED"     -> PaymentStatus.FAILED;
-            case "PENDING"    -> PaymentStatus.PENDING;
-            default           -> PaymentStatus.PENDING;
+            case "FAILED" -> PaymentStatus.FAILED;
+            case "PENDING" -> PaymentStatus.PENDING;
+            default -> PaymentStatus.PENDING;
         };
     }
 
     private String mapMessage(PaymentStatus status) {
         return switch (status) {
-            case INITIATED   -> "Payment initiated.";
-            case PENDING     -> "Waiting for mobile money approval.";
-            case SUCCESSFUL  -> "Payment successful.";
-            case FAILED      -> "Payment failed. Please try again.";
-            case CANCELLED ->   "Payment cancelled.";
-            case TIMEOUT     -> "Payment request expired. Please retry.";
+            case INITIATED -> "Payment initiated.";
+            case PENDING -> "Waiting for mobile money approval.";
+            case SUCCESSFUL -> "Payment successful.";
+            case FAILED -> "Payment failed. Please try again.";
+            case CANCELLED -> "Payment cancelled.";
+            case TIMEOUT -> "Payment request expired. Please retry.";
         };
     }
 }

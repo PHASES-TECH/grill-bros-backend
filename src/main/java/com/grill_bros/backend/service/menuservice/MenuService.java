@@ -10,6 +10,7 @@ import com.grill_bros.backend.model.MenuItem;
 import com.grill_bros.backend.repository.MenuCategoryRepository;
 import com.grill_bros.backend.repository.MenuItemRepository;
 import com.grill_bros.backend.service.cacheservice.CacheService;
+import com.grill_bros.backend.service.utilsservice.ImageUploadService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -31,6 +32,7 @@ public class MenuService {
     private final MenuCategoryRepository categoryRepository;
     private final MenuItemRepository itemRepository;
     private final CacheService cache;
+    private final ImageUploadService imageUploadService;
 
     public List<CategoryResponse> getActiveCategories() {
         return cache.get(RedisKeys.MENU_CATEGORIES, new TypeReference<List<CategoryResponse>>() {})
@@ -142,7 +144,7 @@ public class MenuService {
 
         MenuItem item = MenuItem.create(req.getName(), req.getPrice(), category);
         item.setDescription(req.getDescription());
-        item.setImageUrl(req.getImageUrl());
+        item.setImageUrl(imageUploadService.upload(req.getFile()));
         item.setSortOrder(req.getSortOrder());
         item.setTags(req.getTags() != null ? req.getTags() : List.of());
 

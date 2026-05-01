@@ -21,16 +21,13 @@ public class Customer extends BaseEntity {
     @Column(columnDefinition = "uuid", updatable = false)
     private UUID id;
 
-    @Column(unique = true)
     private String idNumber;
 
-    private String firstName;
-    private String lastName;
+    private String fullName;
 
     @Column(unique = true)
     private String phoneNumber;
 
-    @Column(unique = true)
     private String email;
 
     private String address;

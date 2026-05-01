@@ -79,7 +79,7 @@ public class SmsCampaignService {
                 recipients.add(SmsRecipient.builder()
                         .campaign(campaign)
                         .recipientId(customer.getId())
-                        .recipientName(customer.getFirstName() + " " + customer.getLastName())
+                        .recipientName(customer.getFullName())
                         .phoneNumber(customer.getPhoneNumber())
                         .status(SmsStatus.PENDING)
                         .build());

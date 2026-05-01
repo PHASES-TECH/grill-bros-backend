@@ -31,7 +31,7 @@ public class AuthenticationOtpService {
     private static final int OTP_EXPIRY_MINUTES = 10;
     private static final int MAX_ATTEMPTS = 3;
     private static final int RATE_LIMIT_MINUTES = 60; // 1 hour
-    private static final int MAX_OTP_PER_HOUR = 3;
+    private static final int MAX_OTP_PER_HOUR = 10;
 
     @Transactional
     public OtpResponse requestUserAuthentication(UserAuthenticationRequest request) {
@@ -90,6 +90,7 @@ public class AuthenticationOtpService {
 
     @Transactional
     public void verifyOtp(VerifyOtpRequest request) {
+
         Users user = userRepository.findByPhoneNumber(request.getPhoneNumber());
 //                .orElseThrow(() -> new ResourceNotFoundException("No account found with this phone number"));
         if (user == null) {
@@ -141,6 +142,11 @@ public class AuthenticationOtpService {
 
         if (cleaned.startsWith("0")) {
             cleaned = cleaned.substring(1);
+        }
+
+        if (cleaned.startsWith("+")) {
+            cleaned = cleaned.substring(1);
+            return cleaned;
         }
 
         return "233" + cleaned;
