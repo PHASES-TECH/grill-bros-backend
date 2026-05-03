@@ -23,7 +23,7 @@ public class RefreshToken extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String token;
 
-    @OneToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private Users user;
 

@@ -137,6 +137,7 @@ public class MenuController {
 
     @PostMapping("/categories")
     @Operation(summary = "Create a new menu category")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(
             @Valid @RequestBody CreateCategoryRequest req
     ) {

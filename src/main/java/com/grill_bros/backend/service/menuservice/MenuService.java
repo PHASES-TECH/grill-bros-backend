@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -142,9 +143,10 @@ public class MenuService {
         MenuCategory category = categoryRepository.findById(req.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("MenuCategory"));
 
-        MenuItem item = MenuItem.create(req.getName(), req.getPrice(), category);
+        BigDecimal price = new BigDecimal(req.getPrice());
+        MenuItem item = MenuItem.create(req.getName(), price, category);
         item.setDescription(req.getDescription());
-        item.setImageUrl(imageUploadService.upload(req.getFile()));
+//        item.setImageUrl(imageUploadService.upload(req.getFile()));
         item.setSortOrder(req.getSortOrder());
         item.setTags(req.getTags() != null ? req.getTags() : List.of());
 
