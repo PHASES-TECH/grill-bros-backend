@@ -19,8 +19,6 @@ public class CreateMenuItemRequest {
     private String description;
 
     @NotNull(message = "Price is required")
-    @DecimalMin(value = "0.01", message = "Price must be greater than 0")
-    @Digits(integer = 8, fraction = 2, message = "Price format invalid")
     private String price;
 
     @NotNull(message = "Category ID is required")

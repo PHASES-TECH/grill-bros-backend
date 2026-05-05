@@ -34,6 +34,8 @@ public class SmsRecipientService {
     private List<String> getCustomerContacts(Users currentAdmin, BulkSmsRequest request) {
         List<Customer> customers = new ArrayList<>();
 
+        customers = customerRepository.findAll();
+
         return customers.stream()
                 .map(Customer::getPhoneNumber)
                 .filter(contact -> contact != null && !contact.isEmpty())
@@ -43,6 +45,8 @@ public class SmsRecipientService {
 
     private List<String> getAdminContacts(Users currentAdmin, BulkSmsRequest request) {
         List<Users> admins = new ArrayList<>();
+
+        admins = userRepository.findAll();
 
         return admins.stream()
                 .map(Users::getPhoneNumber)

@@ -105,6 +105,16 @@ public class OrderService {
         eventPublisher.publishEvent(
                 new OrderStatusChangedEvent(this, saved.getId(), saved.getOrderNumber(),
                         previous, saved.getStatus()));
+
+        String message = String.format(
+                "Your order has been completed! Your order ID is %s. You can track its status anytime.",
+                order.getOrderNumber()
+        );
+
+        if (req.getStatus().equals(OrderStatus.COMPLETED)) {
+            smsProviderService.sendSms(List.of(order.getCustomerPhone()), message);
+        }
+
         return OrderResponse.from(saved);
     }
 

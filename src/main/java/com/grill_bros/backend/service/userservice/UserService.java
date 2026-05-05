@@ -76,7 +76,6 @@ public class UserService {
 
         userRepository.save(newUser);
 
-        // Send OTP AFTER saving user
         UserAuthenticationRequest authRequest = new UserAuthenticationRequest();
         authRequest.setPhoneNumber(request.getPhoneNumber());
 

@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -101,6 +102,7 @@ public class AuthController {
     }
 
     @PostMapping("auth/register/admin")
+//    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<OtpResponse>> registerAdmin(@RequestBody AdminRequestDto adminRequestDto) {
         OtpResponse otpResponse = userService.registerUser(adminRequestDto);
         return ResponseEntity.ok(
@@ -235,14 +237,11 @@ public class AuthController {
     @PostMapping("/auth/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
         String accessToken = cookieUtil.extractToken(request);
+        String refreshTokenValue = cookieUtil.extractRefreshToken(request);
 
         if (accessToken != null && !accessToken.isEmpty()) {
             userSessionService.endSession(accessToken);
         }
-
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        Users user = userPrincipal.getUser();
-        refreshTokenService.deleteByUser(user);
 
         ResponseCookie deleteAccess = ResponseCookie.from("access_token", "")
                 .httpOnly(true)

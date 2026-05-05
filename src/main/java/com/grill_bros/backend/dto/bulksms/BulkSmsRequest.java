@@ -9,8 +9,5 @@ import java.util.UUID;
 @Data
 public class BulkSmsRequest {
     private RecipientType recipientType;
-    private List<UUID> dioceseIds;
-    private List<UUID> parishIds;
-    private List<UUID> outstationIds;
     private String message;
 }

@@ -48,16 +48,12 @@ public class AuthenticationOtpService {
 
         String phoneNumber = formatPhoneNumber(user.getPhoneNumber());
 
-        // Check rate limiting
         checkRateLimit(user);
 
-        // Invalidate all previous unused OTPs for this user
         invalidatePreviousOtps(user);
 
-        // Generate OTP
         String otp = generateOtp();
 
-        // Create OTP record
         UserAuthenticationOtp otpRecord = UserAuthenticationOtp.builder()
                 .user(user)
                 .otp(otp)
