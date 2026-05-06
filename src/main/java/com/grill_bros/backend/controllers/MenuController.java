@@ -101,7 +101,7 @@ public class MenuController {
         return ResponseEntity.ok(ApiResponse.ok(menuService.getItemById(id)));
     }
 
-    @GetMapping("/search")
+    @GetMapping("/items/search")
     @Operation(summary = "Search menu items")
     public ResponseEntity<ApiResponse<PagedResponse<MenuItemResponse>>> searchItems(
             @RequestParam String query,

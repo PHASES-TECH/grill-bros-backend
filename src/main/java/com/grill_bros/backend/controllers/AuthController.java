@@ -29,6 +29,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 
 @RestController
@@ -137,6 +138,7 @@ public class AuthController {
 
         String accessToken = userService.verifyOtpAndLogin(request);
         Users user = userService.findUserbyPhone(request.getPhoneNumber());
+        user.setLastLoginAt(Instant.now());
 
         Users loggedInUser = userService.findUserWithContext(user.getId());
 

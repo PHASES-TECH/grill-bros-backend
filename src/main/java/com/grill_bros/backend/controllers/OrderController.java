@@ -34,7 +34,6 @@ public class OrderController {
     @PostMapping
     @Operation(summary = "Create a new order from cart contents", description = "Submits the customer's cart at checkout. Cart is managed on the " + "frontend; this endpoint receives the final resolved list of items. " + "Returns the created order including its UUID (needed for payment) " + "and human-readable order number (needed for tracking).")
     @ApiResponses({@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Order created successfully"), @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error — missing or invalid fields"), @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "One or more menu items not found"), @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "422", description = "One or more items currently unavailable")})
-
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Customer details and cart items", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
                 {
                   "customerName": "Kwame Mensah",

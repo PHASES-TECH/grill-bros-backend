@@ -18,6 +18,7 @@ import com.grill_bros.backend.repository.OtpRepository;
 import com.grill_bros.backend.repository.UserRepository;
 import com.grill_bros.backend.service.authenticationservice.AuthenticationOtpService;
 import com.grill_bros.backend.service.jwtservice.JWTService;
+import com.grill_bros.backend.service.smsservice.SmsProviderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.*;
@@ -28,6 +29,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,6 +40,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final OtpRepository otpRepository;
+    private final SmsProviderService smsProviderService;
 
     @Autowired
     private AuthenticationManager authManager;
@@ -78,6 +81,13 @@ public class UserService {
 
         UserAuthenticationRequest authRequest = new UserAuthenticationRequest();
         authRequest.setPhoneNumber(request.getPhoneNumber());
+
+        String message = String.format(
+                "Welcome to Grill Bros! You’ve been added as an admin. Sign in using your phone number (%s) to start managing orders and operations.",
+                request.getPhoneNumber()
+        );
+
+        smsProviderService.sendSms(List.of(request.getPhoneNumber()), message);
 
         return authenticationOtpService.requestUserAuthentication(authRequest);
     }

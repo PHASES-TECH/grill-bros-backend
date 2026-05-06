@@ -10,6 +10,7 @@ import com.grill_bros.backend.model.Users;
 import com.grill_bros.backend.repository.OtpRepository;
 import com.grill_bros.backend.repository.UserRepository;
 import com.grill_bros.backend.service.smsservice.SmsProviderService;
+import com.grill_bros.backend.service.utilsservice.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ public class AuthenticationOtpService {
     private final UserRepository userRepository;
     private final SmsProviderService smsProviderService;
     private final OtpRepository otpRepository;
+    private final EmailService emailService;
 
     private static final int OTP_LENGTH = 6;
     private static final int OTP_EXPIRY_MINUTES = 10;
@@ -74,6 +76,8 @@ public class AuthenticationOtpService {
         );
 
         smsProviderService.sendSms(List.of(phoneNumber), message);
+
+        emailService.sendOtpEmail(user.getEmail(), user.getFullName(), otp);
 
 //        log.info("Authentication OTP sent to user: {} (phone: {})", user.getId(), phoneNumber);
 

@@ -4,6 +4,10 @@ import com.grill_bros.backend.cache.RedisKeys;
 import com.grill_bros.backend.dto.dashboarddtos.DashboardStatsResponse;
 import com.grill_bros.backend.dto.dashboarddtos.RevenueResponse;
 import com.grill_bros.backend.dto.dashboarddtos.TopItemResponse;
+import com.grill_bros.backend.model.Order;
+import com.grill_bros.backend.model.OrderItem;
+import com.grill_bros.backend.records.CategoryQuantityDistribution;
+import com.grill_bros.backend.records.CategoryRevenueDistribution;
 import com.grill_bros.backend.records.OrderStatus;
 import com.grill_bros.backend.repository.MenuItemRepository;
 import com.grill_bros.backend.repository.OrderRepository;
@@ -42,21 +46,21 @@ public class DashboardService {
     private DashboardStatsResponse computeTodayStats() {
         Instant startOfDay = LocalDate.now(ZoneOffset.UTC)
                 .atStartOfDay(ZoneOffset.UTC).toInstant();
-        Instant now        = Instant.now();
+        Instant now = Instant.now();
 
-        long       completedCount = orderRepository.countCompletedBetween(startOfDay, now);
-        BigDecimal revenue        = orderRepository.sumRevenueBetween(startOfDay, now);
-        BigDecimal avgValue       = orderRepository.avgOrderValueBetween(startOfDay, now);
+        long completedCount = orderRepository.countCompletedBetween(startOfDay, now);
+        BigDecimal revenue = orderRepository.sumRevenueBetween(startOfDay, now);
+        BigDecimal avgValue = orderRepository.avgOrderValueBetween(startOfDay, now);
 
         // Order distribution by status since start of day
-        List<Object[]> rawCounts  = orderRepository.countByStatusSince(startOfDay);
+        List<Object[]> rawCounts = orderRepository.countByStatusSince(startOfDay);
         Map<String, Long> byStatus = new LinkedHashMap<>();
         for (OrderStatus s : OrderStatus.values()) byStatus.put(s.name(), 0L);
         for (Object[] row : rawCounts) {
             byStatus.put(row[0].toString(), ((Number) row[1]).longValue());
         }
 
-        long pendingCount  = byStatus.getOrDefault(OrderStatus.PENDING.name(),   0L);
+        long pendingCount = byStatus.getOrDefault(OrderStatus.PENDING.name(), 0L);
         long completedTotal = byStatus.getOrDefault(OrderStatus.COMPLETED.name(), 0L);
 
         return DashboardStatsResponse.builder()
@@ -84,11 +88,11 @@ public class DashboardService {
 
     private RevenueResponse computeRevenue(LocalDate from, LocalDate to) {
         Instant fromInstant = from.atStartOfDay(ZoneOffset.UTC).toInstant();
-        Instant toInstant   = to.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant toInstant = to.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
 
         BigDecimal totalRevenue = orderRepository.sumRevenueBetween(fromInstant, toInstant);
-        long       totalOrders  = orderRepository.countCompletedBetween(fromInstant, toInstant);
-        BigDecimal avgValue     = orderRepository.avgOrderValueBetween(fromInstant, toInstant);
+        long totalOrders = orderRepository.countCompletedBetween(fromInstant, toInstant);
+        BigDecimal avgValue = orderRepository.avgOrderValueBetween(fromInstant, toInstant);
 
         List<Object[]> rawDaily = orderRepository.dailyRevenueBetween(fromInstant, toInstant);
         List<RevenueResponse.DailyRevenue> daily = rawDaily.stream()
@@ -122,5 +126,81 @@ public class DashboardService {
                         .totalRevenue(new BigDecimal(row[3].toString()))
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    public List<CategoryQuantityDistribution> getCategoryQuantityDistribution() {
+        List<Order> orders = orderRepository.findAll();
+        Map<String, Integer> grouped = orders.stream()
+                .flatMap(order -> order.getItems().stream())
+                .filter(item -> item.getMenuItem() != null)
+                .filter(item -> item.getMenuItem().getCategory() != null)
+                .collect(Collectors.groupingBy(
+                        item -> item.getMenuItem().getCategory().getName(),
+                        Collectors.summingInt(OrderItem::getQuantity)
+                ));
+
+        int grandTotal = grouped.values()
+                .stream()
+                .mapToInt(Integer::intValue)
+                .sum();
+
+        return grouped.entrySet()
+                .stream()
+                .map(entry -> {
+                    double percentage = grandTotal == 0
+                            ? 0
+                            : (entry.getValue() * 100.0) / grandTotal;
+
+                    return new CategoryQuantityDistribution(
+                            entry.getKey(),
+                            entry.getValue(),
+                            Math.round(percentage * 100.0) / 100.0
+                    );
+                })
+                .sorted((a, b) ->
+                        Integer.compare(b.totalQuantity(), a.totalQuantity()))
+                .toList();
+    }
+
+    public List<CategoryRevenueDistribution> getCategoryRevenueDistribution(
+    ) {
+        List<Order> orders = orderRepository.findAll();
+        Map<String, BigDecimal> grouped = orders.stream()
+                .flatMap(order -> order.getItems().stream())
+                .filter(item -> item.getMenuItem() != null)
+                .filter(item -> item.getMenuItem().getCategory() != null)
+                .collect(Collectors.groupingBy(
+                        item -> item.getMenuItem().getCategory().getName(),
+                        Collectors.reducing(
+                                BigDecimal.ZERO,
+                                OrderItem::getLineTotal,
+                                BigDecimal::add
+                        )
+                ));
+
+        BigDecimal grandTotal = grouped.values()
+                .stream()
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return grouped.entrySet()
+                .stream()
+                .map(entry -> {
+
+                    double percentage = BigDecimal.ZERO.compareTo(grandTotal) == 0
+                            ? 0
+                            : entry.getValue()
+                            .multiply(BigDecimal.valueOf(100))
+                            .divide(grandTotal, 2, RoundingMode.HALF_UP)
+                            .doubleValue();
+
+                    return new CategoryRevenueDistribution(
+                            entry.getKey(),
+                            entry.getValue(),
+                            percentage
+                    );
+                })
+                .sorted((a, b) ->
+                        b.revenue().compareTo(a.revenue()))
+                .toList();
     }
 }
