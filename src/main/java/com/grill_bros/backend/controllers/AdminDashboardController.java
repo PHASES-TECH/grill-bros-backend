@@ -73,12 +73,12 @@ public class AdminDashboardController {
         );
     }
 
-    @GetMapping("/quantity-distribution")
+    @GetMapping("/category/quantity-dist")
     public ResponseEntity<ApiResponse<?>> getCategoryQuantityDistribution() {
         return ResponseEntity.ok(ApiResponse.ok(dashboardService.getCategoryQuantityDistribution()));
     }
 
-    @GetMapping("/revenue-distribution")
+    @GetMapping("/category/revenue-dist")
     public ResponseEntity<ApiResponse<?>> getCategoryRevenueDistribution() {
         return ResponseEntity.ok(ApiResponse.ok(dashboardService.getCategoryRevenueDistribution()));
     }
