@@ -8,6 +8,7 @@ import com.grill_bros.backend.dto.authentication.VerifyOtpRequest;
 import com.grill_bros.backend.model.RefreshToken;
 import com.grill_bros.backend.model.UserPrincipal;
 import com.grill_bros.backend.model.Users;
+import com.grill_bros.backend.repository.UserRepository;
 import com.grill_bros.backend.service.authenticationservice.AuthenticationOtpService;
 import com.grill_bros.backend.service.jwtservice.JWTService;
 import com.grill_bros.backend.service.jwtservice.RefreshTokenService;
@@ -41,6 +42,7 @@ public class AuthController {
     private final UserSessionService userSessionService;
     private final AuthenticationOtpService authenticationOtpService;
     private final RefreshTokenService refreshTokenService;
+    private final UserRepository userRepository;
     private final CookieUtil cookieUtil;
 
     @Autowired
@@ -139,12 +141,13 @@ public class AuthController {
         String accessToken = userService.verifyOtpAndLogin(request);
         Users user = userService.findUserbyPhone(request.getPhoneNumber());
         user.setLastLoginAt(Instant.now());
+        userRepository.save(user);
 
         Users loggedInUser = userService.findUserWithContext(user.getId());
 
         userSessionService.createSession(user.getEmail(), accessToken);
 
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+//        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
                 .httpOnly(true)
@@ -156,20 +159,20 @@ public class AuthController {
                 .maxAge(Duration.ofHours(24))
                 .build();
 
-        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("None")
-//                .sameSite("SameSite")
-                .path("/")
-//                .domain("localhost")
-                .maxAge(Duration.ofDays(30))
-                .build();
+//        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())
+//                .httpOnly(true)
+//                .secure(true)
+//                .sameSite("None")
+////                .sameSite("SameSite")
+//                .path("/")
+////                .domain("localhost")
+//                .maxAge(Duration.ofDays(30))
+//                .build();
 
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+//                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(AuthResponse.builder()
                         .message("Login successful")
                         .user(UserResponseDto.from(loggedInUser))

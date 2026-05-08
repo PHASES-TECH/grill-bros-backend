@@ -6,10 +6,7 @@ import com.grill_bros.backend.dto.authentication.OtpResponse;
 import com.grill_bros.backend.dto.authentication.UserAuthenticationRequest;
 import com.grill_bros.backend.dto.authentication.VerifyOtpRequest;
 import com.grill_bros.backend.dto.usersdto.UsersDto;
-import com.grill_bros.backend.exceptions.AccountDisabledException;
-import com.grill_bros.backend.exceptions.AccountLockedException;
-import com.grill_bros.backend.exceptions.InvalidCredentialsException;
-import com.grill_bros.backend.exceptions.ResourceNotFoundException;
+import com.grill_bros.backend.exceptions.*;
 import com.grill_bros.backend.exceptions.passwordexceptions.InvalidOtpException;
 import com.grill_bros.backend.model.UserAuthenticationOtp;
 import com.grill_bros.backend.model.UserPrincipal;
@@ -62,11 +59,10 @@ public class UserService {
 
     @Transactional
     public OtpResponse registerUser(AdminRequestDto request) {
-        Users existingUser = userRepository.findByPhoneNumber(request.getPhoneNumber());
-
-        if (existingUser != null) {
-            throw new IllegalArgumentException("Account already exists");
-        }
+        userRepository.findByPhoneNumber(request.getPhoneNumber())
+                .ifPresent(user -> {
+                    throw new DuplicateResourceException("User already exists");
+                });
 
         Users newUser = new Users();
         newUser.setEmail(request.getEmail());
@@ -95,7 +91,8 @@ public class UserService {
     public void verifyUserOtp(VerifyOtpRequest request) {
         authenticationOtpService.verifyOtp(request);
 
-        Users user = userRepository.findByPhoneNumber(request.getPhoneNumber());
+        Users user = userRepository.findByPhoneNumber(request.getPhoneNumber())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         user.setPhoneNumberVerified(true);
 
@@ -125,7 +122,7 @@ public class UserService {
 //        };
 //    }
 
-    public Users findUserWithContext(UUID userId){
+    public Users findUserWithContext(UUID userId) {
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -133,10 +130,8 @@ public class UserService {
     }
 
     public Users findUserbyPhone(String phoneNumber) {
-        Users user = userRepository.findByPhoneNumber(phoneNumber);
-        if (user == null) {
-            throw new ResourceNotFoundException("User not found");
-        }
+        Users user = userRepository.findByPhoneNumber(phoneNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return user;
     }
@@ -146,7 +141,8 @@ public class UserService {
 
         authenticationOtpService.verifyOtp(request);
 
-        Users user = userRepository.findByPhoneNumber(request.getPhoneNumber());
+        Users user = userRepository.findByPhoneNumber(request.getPhoneNumber())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (user == null) {
             throw new ResourceNotFoundException("User not found");

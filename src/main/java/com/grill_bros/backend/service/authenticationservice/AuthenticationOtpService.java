@@ -19,6 +19,7 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -38,11 +39,9 @@ public class AuthenticationOtpService {
     @Transactional
     public OtpResponse requestUserAuthentication(UserAuthenticationRequest request) {
         // Find user by phone number
-        Users user = userRepository.findByPhoneNumber(request.getPhoneNumber());
+        Users user = userRepository.findByPhoneNumber(request.getPhoneNumber())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 //                .orElseThrow(() -> new ResourceNotFoundException("No account found with this phone number"));
-        if (user == null) {
-            throw new ResourceNotFoundException("User not found");
-        }
 
         if (user.getPhoneNumber() == null || user.getPhoneNumber().isEmpty()) {
             throw new BadRequestException("No phone number associated with this account. Please contact support.");
@@ -91,11 +90,8 @@ public class AuthenticationOtpService {
     @Transactional
     public void verifyOtp(VerifyOtpRequest request) {
 
-        Users user = userRepository.findByPhoneNumber(request.getPhoneNumber());
-//                .orElseThrow(() -> new ResourceNotFoundException("No account found with this phone number"));
-        if (user == null) {
-            throw new ResourceNotFoundException("User not found");
-        }
+        Users user = userRepository.findByPhoneNumber(request.getPhoneNumber())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         String phoneNumber = formatPhoneNumber(user.getPhoneNumber());
 
