@@ -17,8 +17,7 @@ public class CreateModifierRequest {
     private String name;
 
     @NotNull
-    @DecimalMin("0.00")
-    private BigDecimal price;
+    private String price;
 
     @NotNull
     private UUID groupId;

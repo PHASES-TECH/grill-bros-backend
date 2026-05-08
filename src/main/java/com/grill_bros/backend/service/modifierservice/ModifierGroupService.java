@@ -10,7 +10,10 @@ import com.grill_bros.backend.model.ModifierGroup;
 import com.grill_bros.backend.repository.MenuItemRepository;
 import com.grill_bros.backend.repository.ModifierGroupRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,6 +27,12 @@ public class ModifierGroupService {
     private final ModifierGroupRepository groupRepo;
     private final MenuItemRepository menuItemRepo;
 
+    public Page<ModifierGroupResponse> getAllGroups(Pageable pageable) {
+        return groupRepo.findAll(pageable)
+                .map(ModifierGroupResponse::from);
+    }
+
+    @Transactional
     public ModifierGroupResponse createGroup(CreateModifierGroupRequest req) {
 
         MenuItem menuItem = menuItemRepo.findById(req.getMenuItemId())
@@ -40,7 +49,7 @@ public class ModifierGroupService {
         return ModifierGroupResponse.from(group);
     }
 
-    public List<ModifierResponse> getModifiersForGroup(UUID menuItemId) {
+    public List<ModifierResponse> getModifierGroupsForMenuItem(UUID menuItemId) {
         List<ModifierGroup> modifierGroups = groupRepo.findByMenuItemId(menuItemId);
 
         if (modifierGroups == null || modifierGroups.isEmpty()) {

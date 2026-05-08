@@ -35,6 +35,12 @@ public class MenuService {
     private final CacheService cache;
     private final ImageUploadService imageUploadService;
 
+    public List<MenuItemResponse> getMenuItems() {
+        return itemRepository.findAll()
+                .stream()
+                .map(MenuItemResponse::from)
+                .toList();
+    }
     public List<CategoryResponse> getActiveCategories() {
         return cache.get(RedisKeys.MENU_CATEGORIES, new TypeReference<List<CategoryResponse>>() {})
                 .orElseGet(() -> {

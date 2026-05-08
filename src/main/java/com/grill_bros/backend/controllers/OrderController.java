@@ -5,6 +5,7 @@ import com.grill_bros.backend.dto.ordersdto.CreateOrderRequest;
 import com.grill_bros.backend.dto.ordersdto.OrderResponse;
 import com.grill_bros.backend.dto.ordersdto.UpdateOrderStatusRequest;
 import com.grill_bros.backend.service.orderservice.OrderService;
+import com.grill_bros.backend.service.utilsservice.ReceiptService;
 import io.lettuce.core.dynamic.annotation.Param;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,6 +31,7 @@ import java.util.UUID;
 public class OrderController {
 
     private final OrderService orderService;
+    private final ReceiptService receiptService;
 
     @PostMapping
     @Operation(summary = "Create a new order from cart contents", description = "Submits the customer's cart at checkout. Cart is managed on the " + "frontend; this endpoint receives the final resolved list of items. " + "Returns the created order including its UUID (needed for payment) " + "and human-readable order number (needed for tracking).")
@@ -72,5 +74,11 @@ public class OrderController {
             @RequestBody UpdateOrderStatusRequest req) {
 
         return ResponseEntity.ok(ApiResponse.ok(orderService.updateStatus(orderId, req)));
+    }
+
+    @GetMapping("/receipt/{id}")
+    public ResponseEntity<?> generateReceipt(@PathVariable String orderId) {
+        receiptService.adminGenerateAndSendReceipt(orderId);
+        return ResponseEntity.ok().build();
     }
 }

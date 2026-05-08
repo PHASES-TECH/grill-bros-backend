@@ -27,6 +27,15 @@ public class MenuController {
 
     private final MenuService menuService;
 
+    @GetMapping("/items/all")
+    @Operation(summary = "List all menu items")
+    public ResponseEntity<ApiResponse> listItems() {
+        List<MenuItemResponse> menuItems = menuService.getMenuItems();
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(menuItems, "Menu items fetched successfully"));
+    }
+
     @GetMapping("/categories")
     @Operation(summary = "List all active categories (paginated)")
     public ResponseEntity<ApiResponse> listCategories() {
@@ -195,6 +204,7 @@ public class MenuController {
     }
 
     @PatchMapping("/items/{id}/availability")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @Operation(summary = "Toggle menu item availability")
     public ResponseEntity<ApiResponse<MenuItemResponse>> toggleAvailability(
             @PathVariable UUID id,
@@ -206,6 +216,7 @@ public class MenuController {
     }
 
     @DeleteMapping("/items/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @Operation(summary = "Delete (soft delete) a menu item")
     public ResponseEntity<ApiResponse<Void>> deleteItem(
             @PathVariable UUID id
