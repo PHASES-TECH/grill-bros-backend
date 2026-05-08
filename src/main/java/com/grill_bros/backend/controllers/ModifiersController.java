@@ -45,6 +45,14 @@ public class ModifiersController {
         return ResponseEntity.ok(ApiResponse.ok(PagedResponse.of(result)));
     }
 
+    @GetMapping("/admin/groups")
+    public ResponseEntity<ApiResponse<List<ModifierGroupResponse>>> getAllModifierGroupsNoPagination(
+    ) {
+        List<ModifierGroupResponse> result = modifierGroupService.getAllGroupsNoPagination();
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+
     @GetMapping("/groups")
     public ResponseEntity<ApiResponse<PagedResponse<ModifierGroupResponse>>> getAllModifierGroups(
             @RequestParam(defaultValue = "0") int page,

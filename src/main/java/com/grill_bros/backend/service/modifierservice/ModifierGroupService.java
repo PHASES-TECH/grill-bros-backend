@@ -32,6 +32,10 @@ public class ModifierGroupService {
                 .map(ModifierGroupResponse::from);
     }
 
+    public List<ModifierGroupResponse> getAllGroupsNoPagination() {
+        return groupRepo.findAll().stream().map(ModifierGroupResponse::from).toList();
+    }
+
     @Transactional
     public ModifierGroupResponse createGroup(CreateModifierGroupRequest req) {
 
