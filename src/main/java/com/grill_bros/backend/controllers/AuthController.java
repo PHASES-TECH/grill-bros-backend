@@ -66,7 +66,7 @@ public class AuthController {
         String accessToken = userService.verify(loginRequest);
         Users user = userPrincipal.getUser();
         Users loggedInUser = userService.findUserWithContext(user.getId());
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+//        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         userSessionService.createSession(user.getEmail(), accessToken);
 
@@ -80,19 +80,19 @@ public class AuthController {
                 .maxAge(Duration.ofMinutes(30))
                 .build();
 
-        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("None")
-//                .sameSite("SameSite")
-                .path("/")
-//                .domain("localhost")
-                .maxAge(Duration.ofHours(24))
-                .build();
+//        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())
+//                .httpOnly(true)
+//                .secure(true)
+//                .sameSite("None")
+////                .sameSite("SameSite")
+//                .path("/")
+////                .domain("localhost")
+//                .maxAge(Duration.ofHours(24))
+//                .build();
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+//                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(AuthResponse.builder()
                         .message("Login successful")
                         .user(UserResponseDto.from(loggedInUser))
