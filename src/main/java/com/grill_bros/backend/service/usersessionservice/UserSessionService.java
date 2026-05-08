@@ -18,8 +18,15 @@ public class UserSessionService implements IUserSessionService {
     private final UserSessionRepository sessionRepository;
     private final HttpServletRequest request;
 
+    @Transactional
     @Override
     public UserSession createSession(String email, String token) {
+        sessionRepository.findByEmailAndIsActiveTrue(email)
+                .forEach(existing -> {
+                    existing.setIsActive(false);
+                    existing.setLogoutTime(LocalDateTime.now());
+                });
+
         UserSession session = new UserSession();
         session.setEmail(email);
         session.setToken(token);

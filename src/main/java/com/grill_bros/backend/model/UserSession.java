@@ -23,8 +23,8 @@ public class UserSession {
 
     private String email;
 
-    @Column(name = "token", length = 500)
-    private String token; // JWT token or session ID
+    @Column(name = "token", length = 500, unique = true)
+    private String token;
 
     private String ipAddress;
 
