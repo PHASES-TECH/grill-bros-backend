@@ -5,6 +5,10 @@ import com.grill_bros.backend.dto.*;
 import com.grill_bros.backend.dto.authentication.OtpResponse;
 import com.grill_bros.backend.dto.authentication.UserAuthenticationRequest;
 import com.grill_bros.backend.dto.authentication.VerifyOtpRequest;
+import com.grill_bros.backend.dto.passwordreset.ForgotPasswordRequest;
+import com.grill_bros.backend.dto.passwordreset.OtpResponsePasswordReset;
+import com.grill_bros.backend.dto.passwordreset.ResetPasswordRequest;
+import com.grill_bros.backend.dto.passwordreset.VerifyOtpRequestPasswordReset;
 import com.grill_bros.backend.model.RefreshToken;
 import com.grill_bros.backend.model.UserPrincipal;
 import com.grill_bros.backend.model.Users;
@@ -12,6 +16,7 @@ import com.grill_bros.backend.repository.UserRepository;
 import com.grill_bros.backend.service.authenticationservice.AuthenticationOtpService;
 import com.grill_bros.backend.service.jwtservice.JWTService;
 import com.grill_bros.backend.service.jwtservice.RefreshTokenService;
+import com.grill_bros.backend.service.passwordresetservice.PasswordResetService;
 import com.grill_bros.backend.service.userservice.UserService;
 import com.grill_bros.backend.service.usersessionservice.UserSessionService;
 import com.grill_bros.backend.utils.CookieUtil;
@@ -23,7 +28,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -44,6 +48,7 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
     private final CookieUtil cookieUtil;
+    private final PasswordResetService passwordResetService;
 
     @Autowired
     private UserService userService;
@@ -272,5 +277,29 @@ public class AuthController {
         response.addHeader(HttpHeaders.SET_COOKIE, deleteRefresh.toString());
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/auth/forgot-password")
+    public ResponseEntity<ApiResponse> requestPasswordReset(
+            @RequestBody ForgotPasswordRequest request) {
+
+        OtpResponsePasswordReset response = passwordResetService.requestPasswordReset(request);
+        return ResponseEntity.ok(ApiResponse.ok(response, "Account found successfully"));
+    }
+
+    @PostMapping("/auth/password/verify-otp")
+    public ResponseEntity<MessageResponse> verifyOtpPasswordReset(
+            @RequestBody VerifyOtpRequestPasswordReset request) {
+
+        passwordResetService.verifyOtp(request);
+        return ResponseEntity.ok(new MessageResponse("OTP verified successfully"));
+    }
+
+    @PostMapping("/auth/reset-password")
+    public ResponseEntity<MessageResponse> resetPassword(
+            @RequestBody ResetPasswordRequest request) {
+
+        passwordResetService.resetPassword(request);
+        return ResponseEntity.ok(new MessageResponse("Password reset successfully"));
     }
 }

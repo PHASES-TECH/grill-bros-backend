@@ -56,7 +56,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/api/v1/auth/login/request-otp", "/api/v1/auth/login", "/api/v1/auth/login/verify-otp", "/api/v1/auth/register/admin",
-                                "/api/v1/auth/logout", "/api/v1/auth/register/verify-phone", "/api/v1/auth/refresh")
+                                "/api/v1/auth/logout", "/api/v1/auth/register/verify-phone", "/api/v1/auth/refresh" ,"/api/v1/auth/forgot-password",
+                                "/api/v1/auth/password/verify-otp", "/api/v1/auth/reset-password")
                         .permitAll()
                         .anyRequest().authenticated())
                 //http.formLogin(Customizer.withDefaults());
