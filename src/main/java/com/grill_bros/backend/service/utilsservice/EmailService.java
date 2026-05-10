@@ -34,7 +34,7 @@ public class EmailService {
     private static final String FROM_ADDRESS = "noreply@grillbros.com";
     private static final String FROM_NAME = "GrillBros";
 
-    @Value("${spring.mail.username}")
+    @Value("${mail.from}")
     private String senderEmail;
 
     private static final DateTimeFormatter DATE_FMT =
@@ -58,7 +58,7 @@ public class EmailService {
             String plainBody = buildOtpPlainText(name, otp);
 
             helper.setText(plainBody, htmlBody);
-            helper.setFrom(senderEmail);
+            helper.setFrom(senderEmail, "GrillBros");
 
             mailSender.send(message);
             log.info("OTP email sent successfully to {}", to);
@@ -88,7 +88,7 @@ public class EmailService {
 
             helper.setTo(to);
             helper.setSubject("🧾 Your GrillBros Receipt — " + order.getOrderNumber()); // use already-loaded order
-            helper.setFrom(senderEmail);
+            helper.setFrom(senderEmail, "GrillBros");
 
             String htmlBody = ReceiptEmailTemplate.build(receipt, order);
             String plainBody = buildPlainText(receipt, order); // pass order in
