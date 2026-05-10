@@ -1,5 +1,6 @@
 package com.grill_bros.backend.service.utilsservice;
 
+import com.cloudinary.api.exceptions.ApiException;
 import com.grill_bros.backend.exceptions.ResourceNotFoundException;
 import com.grill_bros.backend.model.Order;
 import com.grill_bros.backend.model.OrderItem;
@@ -16,6 +17,13 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import jakarta.mail.internet.MimeMessage;
+import sendinblue.ApiClient;
+import sendinblue.Configuration;
+import sibApi.TransactionalEmailsApi;
+import sibModel.SendSmtpEmail;
+import sibModel.SendSmtpEmailAttachment;
+import sibModel.SendSmtpEmailSender;
+import sibModel.SendSmtpEmailTo;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -41,31 +49,38 @@ public class EmailService {
             DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm")
                     .withZone(ZoneId.of("Africa/Accra"));
 
+    @Value("${brevo.api.key}")
+    private String apiKey;
+
+    private TransactionalEmailsApi getApi() {
+        ApiClient client = Configuration.getDefaultApiClient();
+        client.setApiKey(apiKey);
+        return new TransactionalEmailsApi(client);
+    }
+
     @Async
     public void sendOtpEmail(String to, String name, String otp) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(
-                    message,
-                    MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
-                    "UTF-8"
-            );
+            SendSmtpEmail email = new SendSmtpEmail();
 
-            helper.setTo(to);
-            helper.setSubject(buildOtpSubject());
+            email.setSender(new SendSmtpEmailSender()
+                    .name("GrillBros")
+                    .email(senderEmail));
 
-            String htmlBody = buildOtpHtml(name, otp);
-            String plainBody = buildOtpPlainText(name, otp);
+            email.setTo(List.of(new SendSmtpEmailTo()
+                    .email(to)
+                    .name(name)));
 
-            helper.setText(plainBody, htmlBody);
-            helper.setFrom(senderEmail, "GrillBros");
+            email.setSubject("🔐 Your GrillBros Verification Code");
+            email.setHtmlContent(buildOtpHtml(name, otp));
+            email.setTextContent(buildOtpPlainText(name, otp));
 
-            mailSender.send(message);
-            log.info("OTP email sent successfully to {}", to);
+            getApi().sendTransacEmail(email);
+            log.info("OTP email sent to {}", to);
 
-        } catch (Exception e) {
-            log.error("Failed to send OTP email to {}: {}", to, e.getMessage(), e);
-            throw new RuntimeException("Failed to send OTP email", e); // preserve cause
+        } catch (sendinblue.ApiException e) {
+            log.error("Brevo API error: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to send OTP email", e);
         }
     }
 
@@ -75,34 +90,34 @@ public class EmailService {
 
     @Async
     public void sendReceiptEmail(String to, Receipt receipt, byte[] pdfBytes) {
-        // Fetch order with all items + modifiers eagerly BEFORE any lazy access
         Order order = orderRepository.findByIdWithItems(receipt.getOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(
-                    message,
-                    MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
-                    "UTF-8");
+            SendSmtpEmail email = new SendSmtpEmail();
 
-            helper.setTo(to);
-            helper.setSubject("🧾 Your GrillBros Receipt — " + order.getOrderNumber()); // use already-loaded order
-            helper.setFrom(senderEmail, "GrillBros");
+            email.setSender(new SendSmtpEmailSender()
+                    .name("GrillBros")
+                    .email(senderEmail));
 
-            String htmlBody = ReceiptEmailTemplate.build(receipt, order);
-            String plainBody = buildPlainText(receipt, order); // pass order in
+            email.setTo(List.of(new SendSmtpEmailTo()
+                    .email(to)
+                    .name(receipt.getCustomerName())));
 
-            helper.setText(plainBody, htmlBody);
+            email.setSubject("🧾 Your GrillBros Receipt — " + order.getOrderNumber());
+            email.setHtmlContent(ReceiptEmailTemplate.build(receipt, order));
+            email.setTextContent(buildPlainText(receipt, order));
 
-            String attachmentName = "GrillBros-Receipt-" + order.getOrderNumber() + ".pdf";
-            helper.addAttachment(attachmentName, new ByteArrayResource(pdfBytes));
+            SendSmtpEmailAttachment attachment = new SendSmtpEmailAttachment();
+            attachment.setContent(pdfBytes);
+            attachment.setName("GrillBros-Receipt-" + order.getOrderNumber() + ".pdf");
+            email.setAttachment(List.of(attachment));
 
-            mailSender.send(message);
+            getApi().sendTransacEmail(email);
             log.info("Receipt email sent successfully to {} for order {}", to, order.getOrderNumber());
 
-        } catch (Exception e) {
-            log.error("Failed to send receipt email {}: {}", receipt.getReference(), e.getMessage(), e);
+        } catch (sendinblue.ApiException e) {
+            log.error("Failed to send receipt email {}: {}", receipt.getReference(), e.getResponseBody(), e);
             throw new RuntimeException("Failed to send email", e);
         }
     }
