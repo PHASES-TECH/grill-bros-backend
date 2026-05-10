@@ -7,6 +7,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(
@@ -57,7 +58,7 @@ public class OrderItem extends BaseEntity {
     private BigDecimal lineTotal;
 
     @OneToMany(mappedBy = "orderItem", cascade = CascadeType.ALL)
-    private List<OrderItemModifier> modifiers = new ArrayList<>();
+    private Set<OrderItemModifier> modifiers;
 
     public static OrderItem from(MenuItem menuItem, int quantity) {
         OrderItem oi  = new OrderItem();
@@ -80,5 +81,17 @@ public class OrderItem extends BaseEntity {
         this.lineTotal = base.add(modifiersTotal);
 
         return this.lineTotal;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof OrderItem other)) return false;
+        return id != null && id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
     }
 }

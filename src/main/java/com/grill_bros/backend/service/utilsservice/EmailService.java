@@ -1,12 +1,14 @@
 package com.grill_bros.backend.service.utilsservice;
 
-import com.grill_bros.backend.model.Modifier;
+import com.grill_bros.backend.exceptions.ResourceNotFoundException;
+import com.grill_bros.backend.model.Order;
 import com.grill_bros.backend.model.OrderItem;
 import com.grill_bros.backend.model.OrderItemModifier;
 import com.grill_bros.backend.model.Receipt;
+import com.grill_bros.backend.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -18,16 +20,22 @@ import jakarta.mail.internet.MimeMessage;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Set;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class EmailService {
 
-    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+    //    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
     private final JavaMailSender mailSender;
+    private final OrderRepository orderRepository;
 
     private static final String FROM_ADDRESS = "noreply@grillbros.com";
     private static final String FROM_NAME = "GrillBros";
+
+    @Value("${spring.mail.username}")
+    private String senderEmail;
 
     private static final DateTimeFormatter DATE_FMT =
             DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm")
@@ -50,11 +58,14 @@ public class EmailService {
             String plainBody = buildOtpPlainText(name, otp);
 
             helper.setText(plainBody, htmlBody);
+            helper.setFrom(senderEmail);
 
             mailSender.send(message);
+            log.info("OTP email sent successfully to {}", to);
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to send OTP email");
+            log.error("Failed to send OTP email to {}: {}", to, e.getMessage(), e);
+            throw new RuntimeException("Failed to send OTP email", e); // preserve cause
         }
     }
 
@@ -64,6 +75,9 @@ public class EmailService {
 
     @Async
     public void sendReceiptEmail(String to, Receipt receipt, byte[] pdfBytes) {
+        // Fetch order with all items + modifiers eagerly BEFORE any lazy access
+        Order order = orderRepository.findByIdWithItems(receipt.getOrderId())
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -73,24 +87,31 @@ public class EmailService {
                     "UTF-8");
 
             helper.setTo(to);
-            helper.setSubject(buildSubject(receipt));
+            helper.setSubject("🧾 Your GrillBros Receipt — " + order.getOrderNumber()); // use already-loaded order
+            helper.setFrom(senderEmail);
 
-            String htmlBody = ReceiptEmailTemplate.build(receipt);
-            String plainBody = buildPlainText(receipt);
+            String htmlBody = ReceiptEmailTemplate.build(receipt, order);
+            String plainBody = buildPlainText(receipt, order); // pass order in
+
             helper.setText(plainBody, htmlBody);
 
-            String attachmentName = "GrillBros-Receipt-" + receipt.getPayment().getOrder().getOrderNumber() + ".pdf";
+            String attachmentName = "GrillBros-Receipt-" + order.getOrderNumber() + ".pdf";
             helper.addAttachment(attachmentName, new ByteArrayResource(pdfBytes));
 
             mailSender.send(message);
+            log.info("Receipt email sent successfully to {} for order {}", to, order.getOrderNumber());
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to send email");
+            log.error("Failed to send receipt email {}: {}", receipt.getReference(), e.getMessage(), e);
+            throw new RuntimeException("Failed to send email", e);
         }
     }
 
     private String buildSubject(Receipt receipt) {
-        return "🧾 Your GrillBros Receipt — " + receipt.getPayment().getOrder().getOrderNumber();
+        Order order = orderRepository.findById(receipt.getOrderId())
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        return "🧾 Your GrillBros Receipt — " + order.getOrderNumber();
     }
 
     /**
@@ -164,10 +185,10 @@ public class EmailService {
         return sb.toString();
     }
 
-    private String buildPlainText(Receipt receipt) {
+    private String buildPlainText(Receipt receipt, Order order) {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("GRILLBROS — PAYMENT RECEIPT\n");
+        sb.append("THE GRILLBROS — PAYMENT RECEIPT\n");
         sb.append("============================\n\n");
 
         sb.append("Hi ").append(receipt.getCustomerName()).append(",\n\n");
@@ -177,19 +198,20 @@ public class EmailService {
         sb.append("RECEIPT DETAILS\n");
         sb.append("---------------\n");
         sb.append("Reference:  ").append(receipt.getReference()).append("\n");
-        sb.append("Order No.:  ").append(receipt.getPayment().getOrder().getOrderNumber()).append("\n");
+        sb.append("Order No.:  ").append(order.getOrderNumber()).append("\n");
         sb.append("Phone:      ").append(receipt.getCustomerPhone()).append("\n");
         sb.append("Date:       ").append(DATE_FMT.format(receipt.getIssuedAt())).append("\n\n");
 
         sb.append("ORDER ITEMS\n");
         sb.append("-----------\n");
-        for (OrderItem item : receipt.getPayment().getOrder().getItems()) {
+        log.info("Order Items: {}", order.getItems());
+        for (OrderItem item : order.getItems()) {
             sb.append(String.format("%-30s  x%-3d  GHS %s%n",
                     item.getItemName(),
                     item.getQuantity(),
                     String.format("%,.2f", item.getLineTotal())));
 
-            List<OrderItemModifier> modifiers = item.getModifiers();
+            Set<OrderItemModifier> modifiers = item.getModifiers();
             log.info("MODIFIERS: {}", modifiers);
 
             if (modifiers != null && !modifiers.isEmpty()) {

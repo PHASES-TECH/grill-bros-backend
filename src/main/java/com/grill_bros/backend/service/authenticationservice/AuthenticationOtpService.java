@@ -31,7 +31,7 @@ public class AuthenticationOtpService {
     private final EmailService emailService;
 
     private static final int OTP_LENGTH = 6;
-    private static final int OTP_EXPIRY_MINUTES = 10;
+    private static final int OTP_EXPIRY_MINUTES = 5;
     private static final int MAX_ATTEMPTS = 3;
     private static final int RATE_LIMIT_MINUTES = 60; // 1 hour
     private static final int MAX_OTP_PER_HOUR = 10;

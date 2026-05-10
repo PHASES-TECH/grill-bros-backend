@@ -25,6 +25,16 @@ public interface OrderRepository extends JpaRepository<Order, String>, JpaSpecif
 
     long countByCreatedAtBetween(Instant start, Instant end);
 
+    // In OrderRepository
+    @Query("""
+    SELECT DISTINCT o FROM Order o
+    LEFT JOIN FETCH o.items i
+    LEFT JOIN FETCH i.modifiers m
+    LEFT JOIN FETCH m.modifier
+    WHERE o.id = :id
+""")
+    Optional<Order> findByIdWithItems(@Param("id") String id);
+
 //    @Query("""
 //        SELECT o FROM Order o
 //        WHERE (:status       IS NULL OR o.status          = :status)
@@ -41,14 +51,6 @@ public interface OrderRepository extends JpaRepository<Order, String>, JpaSpecif
 //            @Param("from")         Instant from,
 //            @Param("to")           Instant to,
 //            Pageable pageable);
-
-    @Query("""
-        SELECT DISTINCT o FROM Order o
-        LEFT JOIN FETCH o.items oi
-        LEFT JOIN FETCH oi.menuItem
-        WHERE o.id = :id
-        """)
-    Optional<Order> findByIdWithItems(@Param("id") String id);
 
     @Query("""
         SELECT DISTINCT o FROM Order o

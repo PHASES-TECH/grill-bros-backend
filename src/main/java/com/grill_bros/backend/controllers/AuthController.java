@@ -82,7 +82,7 @@ public class AuthController {
 //                .sameSite("SameSite")
                 .path("/")
 //                .domain("localhost")
-                .maxAge(Duration.ofMinutes(30))
+                .maxAge(Duration.ofHours(24))
                 .build();
 
 //        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())

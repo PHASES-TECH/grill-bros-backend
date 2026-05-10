@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -77,8 +78,10 @@ public class OrderController {
     }
 
     @GetMapping("/receipt/{id}")
-    public ResponseEntity<?> generateReceipt(@PathVariable String orderId) {
+    public ResponseEntity<?> generateReceipt(@PathVariable("id")  String orderId) {
         receiptService.adminGenerateAndSendReceipt(orderId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(
+                Map.of("message", "Receipt generated successfully")
+        );
     }
 }

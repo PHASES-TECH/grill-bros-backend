@@ -1,10 +1,14 @@
 package com.grill_bros.backend.service.utilsservice;
 
+import com.grill_bros.backend.exceptions.ResourceNotFoundException;
+import com.grill_bros.backend.model.Order;
 import com.grill_bros.backend.model.OrderItem;
 import com.grill_bros.backend.model.OrderItemModifier;
+import com.grill_bros.backend.repository.OrderRepository;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
 import com.itextpdf.text.pdf.draw.LineSeparator;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import com.grill_bros.backend.model.Receipt;
@@ -15,10 +19,14 @@ import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class PdfService {
+
+    private final OrderRepository orderRepository;
 
     private static final BaseColor BRAND_ORANGE  = new BaseColor(0xE8, 0x42, 0x0E); // #E8420E
     private static final BaseColor BRAND_DARK    = new BaseColor(0x1A, 0x1A, 0x1A); // near-black
@@ -59,6 +67,9 @@ public class PdfService {
 
     public byte[] generateReceiptPdf(Receipt receipt) {
 
+        Order order = orderRepository.findByIdWithItems(receipt.getOrderId())
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 //        Document document = new Document();
 
@@ -74,9 +85,9 @@ public class PdfService {
 
             addHeader(doc, receipt);
             addDivider(doc);
-            addOrderMeta(doc, receipt);
+            addOrderMeta(doc, receipt, order);
             addDivider(doc);
-            addItemsTable(doc, receipt);
+            addItemsTable(doc, receipt, order);
             addTotalRow(doc, receipt);
             addDivider(doc);
             addFooter(doc, receipt);
@@ -92,7 +103,8 @@ public class PdfService {
 //            document.close();
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate PDF");
+            log.error("Failed to generate PDF for receipt {}: {}", receipt.getReference(), e.getMessage(), e);
+            throw new RuntimeException("Failed to generate PDF", e); // preserve cause
         }
 
         return out.toByteArray();
@@ -100,7 +112,7 @@ public class PdfService {
 
     private void addHeader(Document doc, Receipt receipt) throws DocumentException {
         // Brand name
-        Paragraph brand = new Paragraph("GrillBros", FONT_BRAND_TITLE);
+        Paragraph brand = new Paragraph("The GrillBros", FONT_BRAND_TITLE);
         brand.setAlignment(Element.ALIGN_CENTER);
         brand.setSpacingAfter(2);
         doc.add(brand);
@@ -127,14 +139,14 @@ public class PdfService {
         doc.add(Chunk.NEWLINE);
     }
 
-    private void addOrderMeta(Document doc, Receipt receipt) throws DocumentException {
+    private void addOrderMeta(Document doc, Receipt receipt, Order order) throws DocumentException {
         PdfPTable meta = new PdfPTable(new float[]{40f, 60f});
         meta.setWidthPercentage(100);
         meta.setSpacingBefore(4);
         meta.setSpacingAfter(4);
 
         addMetaRow(meta, "Reference",    receipt.getReference());
-        addMetaRow(meta, "Order No.",    receipt.getPayment().getOrder().getOrderNumber());
+        addMetaRow(meta, "Order No.",    order.getOrderNumber());
         addMetaRow(meta, "Customer",     receipt.getCustomerName());
         addMetaRow(meta, "Phone",        receipt.getCustomerPhone());
         addMetaRow(meta, "Date",         DATE_FMT.format(receipt.getIssuedAt()));
@@ -156,7 +168,7 @@ public class PdfService {
     }
 
     /** Line items table with alternating row shading */
-    private void addItemsTable(Document doc, Receipt receipt) throws DocumentException {
+    private void addItemsTable(Document doc, Receipt receipt, Order order) throws DocumentException {
         PdfPTable table = new PdfPTable(new float[]{44f, 10f, 20f, 26f});
         table.setWidthPercentage(100);
         table.setSpacingBefore(6);
@@ -179,11 +191,13 @@ public class PdfService {
 
         // Data rows — alternate background
         boolean alt = false;
-        for (OrderItem item : receipt.getPayment().getOrder().getItems()) {
+        log.info("Order items pdf: {}", order.getItems());
+        for (OrderItem item : order.getItems()) {
             BaseColor bg = alt ? BRAND_LIGHT : BRAND_WHITE;
             alt = !alt;
 
-            List<OrderItemModifier> modifiers = item.getModifiers();
+            Set<OrderItemModifier> modifiers = item.getModifiers();
+            log.info("MODIFIERS: {}", modifiers);
 
             addItemCell(table, item.getItemName(),              bg, Element.ALIGN_LEFT);
             addItemCell(table, String.valueOf(item.getQuantity()), bg, Element.ALIGN_CENTER);

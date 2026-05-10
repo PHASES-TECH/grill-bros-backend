@@ -11,6 +11,7 @@ import com.grill_bros.backend.model.Users;
 import com.grill_bros.backend.repository.PasswordResetOtpRepository;
 import com.grill_bros.backend.repository.UserRepository;
 import com.grill_bros.backend.service.smsservice.SmsProviderService;
+import com.grill_bros.backend.service.utilsservice.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,6 +33,7 @@ public class PasswordResetService {
     private final PasswordResetOtpRepository otpRepository;
     private final SmsProviderService smsProviderService;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     private static final int OTP_LENGTH = 6;
     private static final int OTP_EXPIRY_MINUTES = 10;
@@ -84,6 +86,8 @@ public class PasswordResetService {
         );
 
         smsProviderService.sendSms(List.of(phoneNumber), message);
+
+        emailService.sendOtpEmail(user.getEmail(), user.getFullName(), otp);
 
         log.info("Password reset OTP sent to user: {} (phone: {})", user.getId(), phoneNumber);
 

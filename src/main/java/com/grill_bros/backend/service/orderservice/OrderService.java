@@ -12,7 +12,7 @@ import com.grill_bros.backend.model.*;
 import com.grill_bros.backend.records.OrderStatus;
 import com.grill_bros.backend.repository.*;
 import com.grill_bros.backend.service.smsservice.SmsProviderService;
-import com.grill_bros.backend.service.userservice.AuthContextService;
+import com.grill_bros.backend.service.utilsservice.ReceiptService;
 import com.grill_bros.backend.specifications.OrderSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +42,7 @@ public class OrderService {
     private final SmsProviderService smsProviderService;
     private final ModifierRepository modifierRepository;
     private final CustomerRepository customerRepository;
+    private final ReceiptService receiptService;
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest req) {
@@ -111,8 +112,19 @@ public class OrderService {
                 order.getOrderNumber()
         );
 
+        String messageDelivery = String.format(
+                "Your order is being delivered! Your order ID is %s. You can track its status anytime.",
+                order.getOrderNumber()
+        );
+
         if (req.getStatus().equals(OrderStatus.COMPLETED)) {
             smsProviderService.sendSms(List.of(order.getCustomerPhone()), message);
+            receiptService.adminGenerateAndSendReceipt(id);
+        }
+
+        if (req.getStatus().equals(OrderStatus.DELIVERED)) {
+            smsProviderService.sendSms(List.of(order.getCustomerPhone()), messageDelivery);
+            receiptService.adminGenerateAndSendReceipt(id);
         }
 
         return OrderResponse.from(saved);
@@ -156,7 +168,7 @@ public class OrderService {
 
             OrderItem orderItem = OrderItem.from(menuItem, lineReq.getQuantity());
 
-            List<OrderItemModifier> modifiers = buildModifiers(
+            Set<OrderItemModifier> modifiers = buildModifiers(
                     lineReq.getModifierIds(),
                     menuItem,
                     orderItem
@@ -178,13 +190,13 @@ public class OrderService {
     }
 
     @Transactional
-    private List<OrderItemModifier> buildModifiers(
+    private Set<OrderItemModifier> buildModifiers(
             List<UUID> modifierIds,
             MenuItem menuItem,
             OrderItem orderItem
     ) {
 
-        if (modifierIds == null || modifierIds.isEmpty()) return List.of();
+        if (modifierIds == null || modifierIds.isEmpty()) return Set.of();
 
         List<Modifier> modifiers = modifierRepository.findAllById(modifierIds);
 
@@ -207,6 +219,6 @@ public class OrderService {
                     oim.setPrice(m.getPrice());
                     return oim;
                 })
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
     }
 }

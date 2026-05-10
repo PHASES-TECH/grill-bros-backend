@@ -1,17 +1,20 @@
 package com.grill_bros.backend.service.utilsservice;
 
+import com.grill_bros.backend.model.Order;
 import com.grill_bros.backend.model.OrderItem;
 import com.grill_bros.backend.model.Receipt;
+import com.grill_bros.backend.repository.OrderRepository;
+import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 public final class ReceiptEmailTemplate {
-    private ReceiptEmailTemplate() {}
 
+    private ReceiptEmailTemplate() {}
     // Brand colours
-    private static final String ORANGE      = "#E8420E";
+    private static final String ORANGE      = "#EF4444";
     private static final String DARK        = "#1A1A1A";
     private static final String LIGHT_BG    = "#F7F7F7";
     private static final String WHITE       = "#FFFFFF";
@@ -23,7 +26,7 @@ public final class ReceiptEmailTemplate {
             DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm 'GMT'")
                     .withZone(ZoneId.of("Africa/Accra"));
 
-    static String build(Receipt receipt) {
+    static String build(Receipt receipt, Order order) {
         StringBuilder sb = new StringBuilder();
 
         sb.append("""
@@ -32,7 +35,7 @@ public final class ReceiptEmailTemplate {
             <head>
               <meta charset="UTF-8"/>
               <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-              <title>GrillBros Receipt</title>
+              <title>The GrillBros Receipt</title>
             </head>
             <body style="margin:0;padding:0;background-color:%s;font-family:Arial,Helvetica,sans-serif;">
             """.formatted(LIGHT_BG));
@@ -104,7 +107,7 @@ public final class ReceiptEmailTemplate {
             """.formatted(LIGHT_BG, BORDER));
 
         addMetaRow(sb, "Reference",  receipt.getReference(),  true);
-        addMetaRow(sb, "Order No.",  receipt.getPayment().getOrder().getOrderNumber(), false);
+        addMetaRow(sb, "Order No.",  order.getOrderNumber(), false);
         addMetaRow(sb, "Phone",      receipt.getCustomerPhone(), true);
         addMetaRow(sb, "Date",       DATE_FMT.format(receipt.getIssuedAt()), false);
 
@@ -152,7 +155,7 @@ public final class ReceiptEmailTemplate {
 
         // Item rows
         boolean alt = false;
-        for (OrderItem item : receipt.getPayment().getOrder().getItems()) {
+        for (OrderItem item : order.getItems()) {
             String rowBg = alt ? ALT_ROW : WHITE;
             alt = !alt;
             sb.append("""
