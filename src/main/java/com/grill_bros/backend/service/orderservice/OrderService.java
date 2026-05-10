@@ -154,6 +154,7 @@ public class OrderService {
                 req.getNotes());
 
         order.setPlacedByAdmin(placedBy);
+        log.info("Items", req.getItems());
 
         for (CreateOrderRequest.OrderItemRequest lineReq : req.getItems()) {
             MenuItem menuItem = menuItemRepository

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Data
@@ -30,7 +31,7 @@ public class CreateOrderRequest {
 
     @NotEmpty(message = "Order must contain at least one item")
     @Valid
-    private List<OrderItemRequest> items;
+    private Set<OrderItemRequest> items;
 
     @Data
     public static class OrderItemRequest {

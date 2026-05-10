@@ -6,10 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(
@@ -76,7 +73,7 @@ public class Order extends BaseEntity {
     private Users placedByAdmin;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<OrderItem> items;
+    private Set<OrderItem> items = new HashSet<>();
 
     public static Order create(String orderNumber,
                                String customerName,

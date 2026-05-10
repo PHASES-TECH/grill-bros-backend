@@ -6,6 +6,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -58,7 +59,7 @@ public class OrderItem extends BaseEntity {
     private BigDecimal lineTotal;
 
     @OneToMany(mappedBy = "orderItem", cascade = CascadeType.ALL)
-    private Set<OrderItemModifier> modifiers;
+    private Set<OrderItemModifier> modifiers = new HashSet<>();
 
     public static OrderItem from(MenuItem menuItem, int quantity) {
         OrderItem oi  = new OrderItem();
