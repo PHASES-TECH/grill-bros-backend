@@ -1,7 +1,6 @@
 package com.grill_bros.backend.service.utilsservice;
 
 import com.grill_bros.backend.dto.paymentdto.PaymentReceiptResponse;
-import com.grill_bros.backend.dto.paymentdto.PaymentResponse;
 import com.grill_bros.backend.exceptions.ResourceNotFoundException;
 import com.grill_bros.backend.model.Order;
 import com.grill_bros.backend.model.Payment;
@@ -17,8 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service

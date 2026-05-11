@@ -24,7 +24,7 @@ public class CreateMenuItemRequest {
     @NotNull(message = "Category ID is required")
     private UUID categoryId;
 
-//    private MultipartFile file;
+    private MultipartFile file;
 
     private int sortOrder = 0;
 

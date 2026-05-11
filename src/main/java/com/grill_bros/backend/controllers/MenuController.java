@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -180,10 +181,10 @@ public class MenuController {
         );
     }
 
-    @PostMapping("/items")
+    @PostMapping(value="/items", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Create a new menu item")
     public ResponseEntity<ApiResponse<MenuItemResponse>> createItem(
-            @Valid @RequestBody CreateMenuItemRequest req
+            @Valid @ModelAttribute CreateMenuItemRequest req
     ) {
         MenuItemResponse response = menuService.createItem(req);
 
@@ -192,11 +193,11 @@ public class MenuController {
                 .body(ApiResponse.created(response));
     }
 
-    @PutMapping("/items/{id}")
+    @PutMapping(value="/items/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Update a menu item")
     public ResponseEntity<ApiResponse<MenuItemResponse>> updateItem(
             @PathVariable UUID id,
-            @Valid @RequestBody UpdateMenuItemRequest req
+            @Valid @ModelAttribute UpdateMenuItemRequest req
     ) {
         MenuItemResponse response = menuService.updateItem(id, req);
 

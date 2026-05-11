@@ -2,6 +2,7 @@ package com.grill_bros.backend.dto.menudtos;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -25,8 +26,7 @@ public class UpdateMenuItemRequest {
     @NotNull(message = "Category ID is required")
     private UUID categoryId;
 
-    @Size(max = 500)
-    private String imageUrl;
+    private MultipartFile file;
 
     private int sortOrder;
 

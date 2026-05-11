@@ -156,6 +156,11 @@ public class MenuService {
         item.setSortOrder(req.getSortOrder());
         item.setTags(req.getTags() != null ? req.getTags() : List.of());
 
+        if (req.getFile() != null && !req.getFile().isEmpty()) {
+            String imageUrl = imageUploadService.upload(req.getFile());
+            item.setImageUrl(imageUrl);
+        }
+
         MenuItem saved = itemRepository.save(item);
         evictMenuCaches();
         return MenuItemResponse.from(saved);
@@ -174,10 +179,14 @@ public class MenuService {
         item.setDescription(req.getDescription());
         item.setPrice(req.getPrice());
         item.setCategory(category);
-        item.setImageUrl(req.getImageUrl());
         item.setSortOrder(req.getSortOrder());
         item.setTags(req.getTags() != null ? req.getTags() : List.of());
         if (req.isAvailable()) item.markAvailable(); else item.markUnavailable();
+
+        if (req.getFile() != null && !req.getFile().isEmpty()) {
+            String imageUrl = imageUploadService.upload(req.getFile());
+            item.setImageUrl(imageUrl);
+        }
 
         MenuItem saved = itemRepository.save(item);
         evictMenuCaches();

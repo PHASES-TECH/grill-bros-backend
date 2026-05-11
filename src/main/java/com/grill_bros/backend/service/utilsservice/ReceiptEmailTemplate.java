@@ -3,8 +3,6 @@ package com.grill_bros.backend.service.utilsservice;
 import com.grill_bros.backend.model.Order;
 import com.grill_bros.backend.model.OrderItem;
 import com.grill_bros.backend.model.Receipt;
-import com.grill_bros.backend.repository.OrderRepository;
-import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
