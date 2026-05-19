@@ -21,7 +21,7 @@ public class ImageUploadService {
     @Value("${supabase.key}")
     private String supabaseKey;
 
-    @Value("${supabase.bucket}")
+    @Value("${supabase.bucket.menu-items}")
     private String bucket;
 
     private final RestClient restClient;

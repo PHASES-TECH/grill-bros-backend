@@ -6,6 +6,7 @@ import com.grill_bros.backend.dto.AdminUserResponse;
 import com.grill_bros.backend.dto.menudtos.*;
 import com.grill_bros.backend.service.menuservice.MenuService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -133,6 +134,7 @@ public class MenuController {
         );
     }
 
+    @PermitAll
     @GetMapping("/categories/{slug}/items")
     @Operation(summary = "Get menu items by category slug")
     public ResponseEntity<ApiResponse<List<MenuItemResponse>>> getItemsByCategory(

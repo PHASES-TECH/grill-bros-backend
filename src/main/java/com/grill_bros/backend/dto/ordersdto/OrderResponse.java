@@ -27,6 +27,7 @@ public class OrderResponse {
     private String      notes;
     private String      placedByAdminName;
     private List<OrderItemResponse> items;
+    private String trackingToken;
     private Instant     createdAt;
     private Instant     updatedAt;
 
@@ -46,6 +47,7 @@ public class OrderResponse {
                 .items(o.getItems().stream()
                         .map(OrderItemResponse::from)
                         .collect(Collectors.toList()))
+                .trackingToken(o.getTrackingToken())
                 .createdAt(o.getCreatedAt())
                 .updatedAt(o.getUpdatedAt())
                 .build();
@@ -59,6 +61,7 @@ public class OrderResponse {
                 .customerPhone(o.getCustomerPhone())
                 .status(o.getStatus())
                 .totalAmount(o.getTotalAmount())
+                .trackingToken(o.getTrackingToken())
                 .placedByAdminName(o.getPlacedByAdmin() != null
                         ? o.getPlacedByAdmin().getFullName() : null)
                 .createdAt(o.getCreatedAt())

@@ -22,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -69,7 +70,13 @@ public class OrderService {
 
     public OrderResponse getByOrderNumber(String orderNumber) {
         return orderRepository.findByOrderNumberWithItems(orderNumber)
-                .map(OrderResponse::from)
+                .map(OrderResponse::summary)
+                .orElseThrow(() -> new ResourceNotFoundException("Order"));
+    }
+
+    public OrderResponse getByTrackingToken(String trackingToken) {
+        return orderRepository.findByTrackingTokenWithItems(trackingToken)
+                .map(OrderResponse::summary)
                 .orElseThrow(() -> new ResourceNotFoundException("Order"));
     }
 
@@ -146,12 +153,19 @@ public class OrderService {
     @Transactional
     private Order buildOrder(CreateOrderRequest req, Users placedBy) {
         String orderNumber = orderNumberGenerator.generate();
+        String customerEmail =
+                (req.getCustomerEmail() == null ||
+                        req.getCustomerEmail().isBlank())
+                        ? null
+                        : req.getCustomerEmail();
+
         Order order = Order.create(
                 orderNumber,
                 req.getCustomerName(),
                 req.getCustomerPhone(),
-                req.getCustomerEmail(),
-                req.getNotes());
+                customerEmail,
+                req.getNotes(),
+                generateTrackingToken());
 
         order.setPlacedByAdmin(placedBy);
         log.info("Items", req.getItems());
@@ -221,5 +235,15 @@ public class OrderService {
                     return oim;
                 })
                 .collect(Collectors.toSet());
+    }
+
+    private String generateTrackingToken() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(12);
+        for (int i = 0; i < 12; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 }

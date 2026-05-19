@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,6 +68,17 @@ public class OrderController {
         log.debug("Order status lookup: orderNumber={}", orderNumber);
 
         return ResponseEntity.ok(ApiResponse.ok(orderService.getByOrderNumber(orderNumber)));
+    }
+
+    @PermitAll
+    @GetMapping("/track/{trackingToken}")
+    @Operation(summary = "Track an order by order token", description = "Returns the current status and full line items for an order. " + "Order numbers follow the format QB-YYYYMMDD-XXXX. " + "Use this to build a customer-facing order tracking page.")
+    @ApiResponses({@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Order found"), @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Order not found")})
+    public ResponseEntity<ApiResponse<OrderResponse>> trackOrderByToken(@Parameter(description = "Human-readable order number (e.g. QB-20250601-0042)", example = "QB-20250601-0042", required = true) @PathVariable String trackingToken) {
+
+        log.debug("Order status lookup: orderNumber={}", trackingToken);
+
+        return ResponseEntity.ok(ApiResponse.ok(orderService.getByTrackingToken(trackingToken)));
     }
 
     @PatchMapping("")

@@ -35,23 +35,6 @@ public interface OrderRepository extends JpaRepository<Order, String>, JpaSpecif
 """)
     Optional<Order> findByIdWithItems(@Param("id") String id);
 
-//    @Query("""
-//        SELECT o FROM Order o
-//        WHERE (:status       IS NULL OR o.status          = :status)
-//          AND (:phone        IS NULL OR o.customerPhone   LIKE CONCAT('%',:phone,'%'))
-//          AND (:customerName IS NULL OR LOWER(o.customerName) LIKE LOWER(CONCAT('%',:customerName,'%')))
-//          AND (:from         IS NULL OR o.createdAt       >= :from)
-//          AND (:to           IS NULL OR o.createdAt       <= :to)
-//        ORDER BY o.createdAt DESC
-//        """)
-//    Page<Order> findAllForAdmin(
-//            @Param("status") OrderStatus status,
-//            @Param("phone")        String phone,
-//            @Param("customerName") String customerName,
-//            @Param("from")         Instant from,
-//            @Param("to")           Instant to,
-//            Pageable pageable);
-
     @Query("""
         SELECT DISTINCT o FROM Order o
         LEFT JOIN FETCH o.items oi
@@ -60,7 +43,13 @@ public interface OrderRepository extends JpaRepository<Order, String>, JpaSpecif
         """)
     Optional<Order> findByOrderNumberWithItems(@Param("orderNumber") String orderNumber);
 
-    // ── Revenue / dashboard aggregates ───────────────────────────────────────
+    @Query("""
+        SELECT DISTINCT o FROM Order o
+        LEFT JOIN FETCH o.items oi
+        LEFT JOIN FETCH oi.menuItem
+        WHERE o.trackingToken = :trackingToken
+        """)
+    Optional<Order> findByTrackingTokenWithItems(@Param("trackingToken") String trackingToken);
 
     @Query("""
         SELECT COUNT(o) FROM Order o

@@ -61,7 +61,7 @@ public class OrderNumberGenerator {
         return candidate;
     }
 
-    private String buildOrderNumber(String date, long seq) {
-        return "QB-" + date + "-" + String.format("%04d", seq);
+    private String buildOrderNumber(String datePart, long seq) {
+        return String.format("GB-%s-%04d", datePart, seq);
     }
 }

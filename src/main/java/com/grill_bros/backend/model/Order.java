@@ -67,6 +67,9 @@ public class Order extends BaseEntity {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "tracking_token", unique = true, length = 12)
+    private String trackingToken;
+
     /** Set when an admin places an order on behalf of a customer */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "placed_by_admin_id")
@@ -79,7 +82,8 @@ public class Order extends BaseEntity {
                                String customerName,
                                String customerPhone,
                                String customerEmail,
-                               String notes) {
+                               String notes,
+                               String trackingToken) {
         Order o         = new Order();
         o.orderNumber   = orderNumber;
         o.customerName  = customerName;
@@ -87,6 +91,7 @@ public class Order extends BaseEntity {
         o.customerEmail = customerEmail;
         o.notes         = notes;
         o.status        = OrderStatus.PENDING;
+        o.trackingToken = trackingToken;
         return o;
     }
 

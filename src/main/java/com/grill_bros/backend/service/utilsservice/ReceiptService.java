@@ -8,6 +8,7 @@ import com.grill_bros.backend.model.Receipt;
 import com.grill_bros.backend.records.ReceiptStatus;
 import com.grill_bros.backend.repository.OrderRepository;
 import com.grill_bros.backend.repository.ReceiptRepository;
+import com.grill_bros.backend.service.smsservice.SmsProviderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -27,6 +29,8 @@ public class ReceiptService {
     private final PdfService pdfService;
     private final EmailService emailService;
     private final OrderRepository orderRepository;
+    private final ReceiptStorageService receiptStorageService;
+    private final SmsProviderService smsProviderService;
 
     public Page<PaymentReceiptResponse> getAllPaymentReceipts(Pageable pageable) {
         return receiptRepository.findAll(pageable).map(PaymentReceiptResponse::summary);
@@ -57,20 +61,38 @@ public class ReceiptService {
         receiptRepository.save(receipt);
 
         try {
-            // 2. Generate PDF
             byte[] pdfBytes = pdfService.generateReceiptPdf(receipt);
 
-            // 3. Send email
-            emailService.sendReceiptEmail(
-                    receipt.getCustomerEmail(),
-                    receipt,
-                    pdfBytes
-            );
+            if (receipt.getCustomerEmail() != null && !receipt.getCustomerEmail().isBlank()) {
+                emailService.sendReceiptEmail(
+                        receipt.getCustomerEmail(),
+                        receipt,
+                        pdfBytes
+                );
+            } else {
+                String receiptUrl =
+                        receiptStorageService.uploadReceiptPdf(
+                                pdfBytes,
+                                receipt.getReference()
+                        );
+
+                String message = String.format(
+                        "Thank you for your order. View your receipt here: %s",
+                        receiptUrl
+                );
+
+                smsProviderService.sendSms(
+                        List.of(receipt.getCustomerPhone()),
+                        receiptUrl
+                );
+            }
 
             receipt.setStatus(ReceiptStatus.SENT);
 
         } catch (Exception e) {
+            log.error("adminGenerateAndSendReceipt failed", e);
             receipt.setStatus(ReceiptStatus.FAILED);
+            return;
         }
 
         receiptRepository.save(receipt);
@@ -108,20 +130,62 @@ public class ReceiptService {
                             .build();
                 });
 
-        // already sent
         if (receipt.getStatus() == ReceiptStatus.SENT) {
+           String receiptUrl = receipt.getPdfUrl();
+
+            String message = String.format(
+                    "Thank you for your order. View your receipt here: %s",
+                    receiptUrl
+            );
+
+            smsProviderService.sendSms(
+                    List.of(receipt.getCustomerPhone()),
+                    message
+            );
             return;
         }
 
         try {
-
             byte[] pdfBytes = pdfService.generateReceiptPdf(receipt);
 
-            emailService.sendReceiptEmail(
-                    receipt.getCustomerEmail(),
-                    receipt,
-                    pdfBytes
-            );
+            if (receipt.getCustomerEmail() != null && !receipt.getCustomerEmail().isBlank()) {
+                String receiptUrl = receiptStorageService.uploadReceiptPdf(
+                        pdfBytes,
+                        receipt.getReference()
+                );
+
+                receipt.setPdfUrl(receiptUrl);
+
+                emailService.sendReceiptEmail(
+                        receipt.getCustomerEmail(),
+                        receipt,
+                        pdfBytes
+                );
+            } else {
+                String receiptUrl;
+                if (receipt.getPdfUrl() != null && !receipt.getPdfUrl().isBlank()) {
+                    log.info("Reusing existing receipt URL for reference {}",
+                            receipt.getReference());
+                    receiptUrl = receipt.getPdfUrl();
+                } else {
+                    receiptUrl = receiptStorageService.uploadReceiptPdf(
+                            pdfBytes,
+                            receipt.getReference()
+                    );
+
+                    receipt.setPdfUrl(receiptUrl);
+                }
+
+                String message = String.format(
+                        "Thank you for your order. View your receipt here: %s",
+                        receiptUrl
+                );
+
+                smsProviderService.sendSms(
+                        List.of(receipt.getCustomerPhone()),
+                        message
+                );
+            }
 
             receipt.setStatus(ReceiptStatus.SENT);
 

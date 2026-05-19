@@ -37,87 +37,54 @@ public class JWTFilter extends OncePerRequestFilter {
     private ApplicationContext context;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String token = null;
-        String username = null;
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String path = request.getServletPath();
+        String token = extractTokenFromCookie(request);
 
-        if (path.equals("/api/v1/auth/login")
-                || path.equals("/api/v1/auth/login/request-otp")
-                || path.equals("/api/v1/auth/login/verify-otp")
-                || path.equals("/api/v1/auth/register/admin")
-                || path.equals("/api/v1/auth/logout")
-                || path.equals("/api/v1/auth/register/verify-phone")
-                || path.equals("/api/v1/auth/refresh")
-                || path.equals("/api/v1/auth/forgot-password")
-                || path.equals("/api/v1/auth/password/verify-otp")
-                || path.equals("/api/v1/auth/reset-password")
-        ) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        if (token != null) {
+            try {
+                if (!jwtService.isTokenExpired(token)) {
 
-        // Extract JWT from cookie
-        token = extractTokenFromCookie(request);
+                    String username = jwtService.extractUserName(token);
 
-        if (token == null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+                    userSessionService.updateLastActivity(token);
 
-        try {
-            if (jwtService.isTokenExpired(token)) {
-                ResponseCookie clear = ResponseCookie.from("access_token", "")
-                        .httpOnly(true)
-                        .secure(true)
-                        .sameSite("None")
-                        .path("/")
-                        .maxAge(0)
-                        .build();
+                    if (username != null &&
+                            SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                response.addHeader(HttpHeaders.SET_COOKIE, clear.toString());
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType("application/json");
-                response.getWriter().write("""
-                            {
-                              "error": "TOKEN_EXPIRED",
-                              "message": "Session expired. Please sign in again."
-                            }
-                        """);
-                return;
-            }
+                        UserDetails userDetails =
+                                context.getBean(MyUserDetailsService.class)
+                                        .loadUserByUsername(username);
 
-        } catch (JwtException ex) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("""
-                        {
-                          "error": "INVALID_TOKEN",
-                          "message": "Invalid authentication token."
+                        if (jwtService.validateToken(token, userDetails)) {
+
+                            UsernamePasswordAuthenticationToken authToken =
+                                    new UsernamePasswordAuthenticationToken(
+                                            userDetails,
+                                            null,
+                                            userDetails.getAuthorities()
+                                    );
+
+                            authToken.setDetails(
+                                    new WebAuthenticationDetailsSource().buildDetails(request)
+                            );
+
+                            SecurityContextHolder.getContext().setAuthentication(authToken);
                         }
-                    """);
+                    }
+                }
 
-            response.getWriter().flush();
-            return;
-        }
-
-        username = jwtService.extractUserName(token);
-
-        userSessionService.updateLastActivity(token);
-
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
-            UserDetails userDetails = context.getBean(MyUserDetailsService.class).loadUserByUsername(username);
-            if (jwtService.validateToken(token, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+            } catch (JwtException ex) {
+                SecurityContextHolder.clearContext();
             }
         }
 

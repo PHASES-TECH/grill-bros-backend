@@ -1,10 +1,12 @@
 package com.grill_bros.backend.config;
 
 import com.grill_bros.backend.filter.JWTFilter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -31,6 +33,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@Slf4j
 @EnableAsync
 public class SecurityConfig {
 
@@ -49,25 +52,6 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
-        return http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(requests -> requests
-                        .requestMatchers("/api/v1/auth/login/request-otp", "/api/v1/auth/login", "/api/v1/auth/login/verify-otp", "/api/v1/auth/register/admin",
-                                "/api/v1/auth/logout", "/api/v1/auth/register/verify-phone", "/api/v1/auth/refresh" ,"/api/v1/auth/forgot-password",
-                                "/api/v1/auth/password/verify-otp", "/api/v1/auth/reset-password")
-                        .permitAll()
-                        .anyRequest().authenticated())
-                //http.formLogin(Customizer.withDefaults());
-                .httpBasic(Customizer.withDefaults())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
-    }
-
-    @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
         provider.setPasswordEncoder(new BCryptPasswordEncoder(12));
@@ -80,10 +64,38 @@ public class SecurityConfig {
     }
 
     @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+        return http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(AbstractHttpConfigurer::disable)
+                .authenticationProvider(authenticationProvider())
+                .authorizeHttpRequests(requests -> requests
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/v1/auth/login/request-otp",
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/login/verify-otp",
+                                "/api/v1/auth/register/admin",
+                                "/api/v1/auth/logout",
+                                "/api/v1/auth/register/verify-phone",
+                                "/api/v1/auth/refresh",
+                                "/api/v1/auth/forgot-password",
+                                "/api/v1/auth/password/verify-otp",
+                                "/api/v1/auth/reset-password").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/menu/**").permitAll()
+                        .anyRequest().authenticated())
+                //http.formLogin(Customizer.withDefaults());
+                .httpBasic(Customizer.withDefaults())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
+
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        System.out.println("CORS Allowed Origins: " + allowedOrigins);
+        log.info("CORS Allowed Origins: " + allowedOrigins);
 
         config.setAllowedOriginPatterns(Arrays.asList(allowedOrigins.split(",")));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
@@ -98,6 +110,7 @@ public class SecurityConfig {
                 new UrlBasedCorsConfigurationSource();
 
         source.registerCorsConfiguration("/**", config);
+
         return source;
     }
 }
