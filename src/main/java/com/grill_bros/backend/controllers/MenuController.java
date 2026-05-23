@@ -137,13 +137,28 @@ public class MenuController {
     @PermitAll
     @GetMapping("/categories/{slug}/items")
     @Operation(summary = "Get menu items by category slug")
-    public ResponseEntity<ApiResponse<List<MenuItemResponse>>> getItemsByCategory(
-            @PathVariable String slug
+    public ResponseEntity<ApiResponse<Page<MenuItemResponse>>> getItemsByCategory(
+            @PathVariable String slug,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
     ) {
-        List<MenuItemResponse> items = menuService.getItemsByCategory(slug);
+
+        size = Math.min(size, 100);
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("sortOrder").ascending()
+        );
+
+        Page<MenuItemResponse> items =
+                menuService.getItemsByCategory(slug, pageable);
 
         return ResponseEntity.ok(
-                ApiResponse.ok(items, "Menu items fetched successfully for " + slug)
+                ApiResponse.ok(
+                        items,
+                        "Menu items fetched successfully for " + slug
+                )
         );
     }
 

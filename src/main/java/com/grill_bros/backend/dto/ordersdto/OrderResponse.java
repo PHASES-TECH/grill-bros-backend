@@ -55,15 +55,11 @@ public class OrderResponse {
 
     public static OrderResponse summary(Order o) {
         return OrderResponse.builder()
-                .id(o.getId())
-                .orderNumber(o.getOrderNumber())
                 .customerName(o.getCustomerName())
                 .customerPhone(o.getCustomerPhone())
                 .status(o.getStatus())
                 .totalAmount(o.getTotalAmount())
                 .trackingToken(o.getTrackingToken())
-                .placedByAdminName(o.getPlacedByAdmin() != null
-                        ? o.getPlacedByAdmin().getFullName() : null)
                 .createdAt(o.getCreatedAt())
                 .build();
     }

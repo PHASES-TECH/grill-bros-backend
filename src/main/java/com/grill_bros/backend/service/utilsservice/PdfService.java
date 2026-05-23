@@ -146,7 +146,7 @@ public class PdfService {
         meta.setSpacingAfter(4);
 
         addMetaRow(meta, "Reference",    receipt.getReference());
-        addMetaRow(meta, "Order No.",    order.getOrderNumber());
+        addMetaRow(meta, "Order No.",    order.getTrackingToken());
         addMetaRow(meta, "Customer",     receipt.getCustomerName());
         addMetaRow(meta, "Phone",        receipt.getCustomerPhone());
         addMetaRow(meta, "Date",         DATE_FMT.format(receipt.getIssuedAt()));

@@ -194,8 +194,9 @@ public class OrderService {
         }
 
         String message = String.format(
-                "Order confirmed! Your order ID is %s. Track your order status anytime.",
-                orderNumber
+                "Order confirmed! Your order ID is %s. Track your order status anytime using this token %s",
+                orderNumber,
+                order.getTrackingToken()
         );
 
         smsProviderService.sendSms(List.of(req.getCustomerPhone()), message);

@@ -26,8 +26,10 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, UUID> {
 //    )
 //    Page<MenuItem> findAllActiveAvailable(Pageable pageable);
 
-    List<MenuItem> findAllByCategoryAndActiveTrueAndAvailableTrueOrderBySortOrderAsc(
-            MenuCategory category);
+    Page<MenuItem> findAllByCategoryAndActiveTrueAndAvailableTrue(
+            MenuCategory category,
+            Pageable pageable
+    );
 
     Optional<MenuItem> findByIdAndActiveTrue(UUID id);
 

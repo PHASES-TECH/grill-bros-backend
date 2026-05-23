@@ -76,23 +76,15 @@ public class MenuService {
         return itemRepository.searchAvailable(query, pageable).map(MenuItemResponse::from);
     }
 
-    public List<MenuItemResponse> getItemsByCategory(String slug) {
-        String cacheKey = RedisKeys.menuByCategory(slug);
-        return cache.get(cacheKey, new TypeReference<List<MenuItemResponse>>() {})
-                .orElseGet(() -> {
-                    MenuCategory category = categoryRepository
-                            .findBySlugAndActiveTrue(slug)
-                            .orElseThrow(() -> new ResourceNotFoundException("MenuCategory"));
+    public Page<MenuItemResponse> getItemsByCategory(String slug, Pageable pageable) {
 
-                    List<MenuItemResponse> result = itemRepository
-                            .findAllByCategoryAndActiveTrueAndAvailableTrueOrderBySortOrderAsc(category)
-                            .stream()
-                            .map(MenuItemResponse::from)
-                            .collect(Collectors.toList());
+        MenuCategory category = categoryRepository
+                .findBySlugAndActiveTrue(slug)
+                .orElseThrow(() -> new ResourceNotFoundException("MenuCategory"));
 
-                    cache.set(cacheKey, result, RedisKeys.TTL_MENU_SECONDS);
-                    return result;
-                });
+        return itemRepository
+                .findAllByCategoryAndActiveTrueAndAvailableTrue(category, pageable)
+                .map(MenuItemResponse::from);
     }
 
     public Page<CategoryResponse> adminListCategories(Pageable pageable) {
