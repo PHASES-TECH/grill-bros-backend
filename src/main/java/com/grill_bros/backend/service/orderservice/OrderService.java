@@ -119,20 +119,20 @@ public class OrderService {
                 order.getOrderNumber()
         );
 
-        String messageDelivery = String.format(
-                "Your order is being delivered! Your order ID is %s. You can track its status anytime.",
-                order.getOrderNumber()
-        );
+//        String messageDelivery = String.format(
+//                "Your order is being delivered! Your order ID is %s. You can track its status anytime.",
+//                order.getOrderNumber()
+//        );
 
         if (req.getStatus().equals(OrderStatus.COMPLETED)) {
             smsProviderService.sendSms(List.of(order.getCustomerPhone()), message);
             receiptService.adminGenerateAndSendReceipt(id);
         }
 
-        if (req.getStatus().equals(OrderStatus.DELIVERED)) {
-            smsProviderService.sendSms(List.of(order.getCustomerPhone()), messageDelivery);
-            receiptService.adminGenerateAndSendReceipt(id);
-        }
+//        if (req.getStatus().equals(OrderStatus.DELIVERED)) {
+//            smsProviderService.sendSms(List.of(order.getCustomerPhone()), messageDelivery);
+//            receiptService.adminGenerateAndSendReceipt(id);
+//        }
 
         return OrderResponse.from(saved);
     }

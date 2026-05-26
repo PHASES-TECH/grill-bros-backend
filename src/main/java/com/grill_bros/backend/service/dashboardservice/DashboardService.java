@@ -60,7 +60,7 @@ public class DashboardService {
             byStatus.put(row[0].toString(), ((Number) row[1]).longValue());
         }
 
-        long pendingCount = byStatus.getOrDefault(OrderStatus.PENDING.name(), 0L);
+        long pendingCount = byStatus.getOrDefault(OrderStatus.PREPARING.name(), 0L);
         long completedTotal = byStatus.getOrDefault(OrderStatus.COMPLETED.name(), 0L);
 
         return DashboardStatsResponse.builder()

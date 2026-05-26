@@ -56,7 +56,7 @@ public class Order extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private OrderStatus status = OrderStatus.PENDING;
+    private OrderStatus status = OrderStatus.PREPARING;
 
     @Column(name = "subtotal", nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
@@ -90,7 +90,7 @@ public class Order extends BaseEntity {
         o.customerPhone = customerPhone;
         o.customerEmail = customerEmail;
         o.notes         = notes;
-        o.status        = OrderStatus.PENDING;
+        o.status        = OrderStatus.PREPARING;
         o.trackingToken = trackingToken;
         return o;
     }

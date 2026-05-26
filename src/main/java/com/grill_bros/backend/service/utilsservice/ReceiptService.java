@@ -131,17 +131,17 @@ public class ReceiptService {
                 });
 
         if (receipt.getStatus() == ReceiptStatus.SENT) {
-           String receiptUrl = receipt.getPdfUrl();
-
-            String message = String.format(
-                    "Thank you for your order. View your receipt here: %s",
-                    receiptUrl
-            );
-
-            smsProviderService.sendSms(
-                    List.of(receipt.getCustomerPhone()),
-                    message
-            );
+//           String receiptUrl = receipt.getPdfUrl();
+//
+//            String message = String.format(
+//                    "Thank you for your order. View your receipt here: %s",
+//                    receiptUrl
+//            );
+//
+//            smsProviderService.sendSms(
+//                    List.of(receipt.getCustomerPhone()),
+//                    message
+//            );
             return;
         }
 

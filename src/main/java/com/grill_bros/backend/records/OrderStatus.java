@@ -4,9 +4,9 @@ public enum OrderStatus {
     PENDING,
     CONFIRMED,
     PREPARING,
-    READY,
+//    READY,
     COMPLETED,
-    DELIVERED,
+//    DELIVERED,
     CANCELLED;
 
     public boolean isTerminal() {
@@ -17,10 +17,9 @@ public enum OrderStatus {
         return switch (this) {
             case PENDING    -> next == CONFIRMED || next == CANCELLED;
             case CONFIRMED  -> next == PREPARING || next == CANCELLED;
-            case PREPARING  -> next == READY || next == CANCELLED;
-            case READY      -> next == COMPLETED || next  == DELIVERED || next == CANCELLED;
+            case PREPARING  -> next == COMPLETED || next == CANCELLED;
+//            case READY      -> next == COMPLETED || next  == DELIVERED || next == CANCELLED;
             case COMPLETED,
-                 DELIVERED,
                  CANCELLED  -> false;
         };
     }
