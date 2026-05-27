@@ -119,6 +119,11 @@ public class OrderService {
                 order.getOrderNumber()
         );
 
+        String messageCancelled = String.format(
+                "Your order with Order ID %s has been cancelled. If you did not request this cancellation, kindly contact support for assistance.",
+                order.getOrderNumber()
+        );
+
 //        String messageDelivery = String.format(
 //                "Your order is being delivered! Your order ID is %s. You can track its status anytime.",
 //                order.getOrderNumber()
@@ -129,10 +134,9 @@ public class OrderService {
             receiptService.adminGenerateAndSendReceipt(id);
         }
 
-//        if (req.getStatus().equals(OrderStatus.DELIVERED)) {
-//            smsProviderService.sendSms(List.of(order.getCustomerPhone()), messageDelivery);
-//            receiptService.adminGenerateAndSendReceipt(id);
-//        }
+        if (req.getStatus().equals(OrderStatus.CANCELLED)) {
+            smsProviderService.sendSms(List.of(order.getCustomerPhone()), messageCancelled);
+        }
 
         return OrderResponse.from(saved);
     }
