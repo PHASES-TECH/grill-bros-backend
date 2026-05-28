@@ -88,7 +88,7 @@ public class OrderService {
                                                Pageable pageable) {
         return orderRepository
                 .findAll(OrderSpecification.filter(status, phone, customerName, from, to), pageable)
-                .map(OrderResponse::summary);
+                .map(OrderResponse::from);
     }
 
     public OrderResponse adminGetOrder(String id) {
@@ -245,8 +245,8 @@ public class OrderService {
     private String generateTrackingToken() {
         String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
         SecureRandom random = new SecureRandom();
-        StringBuilder sb = new StringBuilder(12);
-        for (int i = 0; i < 12; i++) {
+        StringBuilder sb = new StringBuilder(5);
+        for (int i = 0; i < 5; i++) {
             sb.append(chars.charAt(random.nextInt(chars.length())));
         }
         return sb.toString();
