@@ -10,6 +10,7 @@ import com.grill_bros.backend.exceptions.InvalidStateTransitionException;
 import com.grill_bros.backend.exceptions.ResourceNotFoundException;
 import com.grill_bros.backend.model.*;
 import com.grill_bros.backend.records.OrderStatus;
+import com.grill_bros.backend.records.PaymentMethod;
 import com.grill_bros.backend.repository.*;
 import com.grill_bros.backend.service.smsservice.SmsProviderService;
 import com.grill_bros.backend.service.utilsservice.ReceiptService;
@@ -162,6 +163,10 @@ public class OrderService {
                         req.getCustomerEmail().isBlank())
                         ? null
                         : req.getCustomerEmail();
+        PaymentMethod paymentMethod = (req.getPaymentMethod() == null ||
+                req.getPaymentMethod().toString().isBlank())
+                ? PaymentMethod.MOBILE_MONEY
+                : req.getPaymentMethod();
 
         Order order = Order.create(
                 orderNumber,
@@ -169,7 +174,8 @@ public class OrderService {
                 req.getCustomerPhone(),
                 customerEmail,
                 req.getNotes(),
-                generateTrackingToken());
+                generateTrackingToken(),
+                paymentMethod);
 
         order.setPlacedByAdmin(placedBy);
         log.info("Items", req.getItems());

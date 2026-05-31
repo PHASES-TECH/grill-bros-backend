@@ -81,4 +81,19 @@ public class AdminDashboardController {
     public ResponseEntity<ApiResponse<?>> getCategoryRevenueDistribution() {
         return ResponseEntity.ok(ApiResponse.ok(dashboardService.getCategoryRevenueDistribution()));
     }
+
+    @GetMapping("/order/analytics")
+    public ResponseEntity<ApiResponse<?>> getOrderAnalytics(
+            @Parameter(description = "Start date (YYYY-MM-DD)")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+
+            @Parameter(description = "End date (YYYY-MM-DD)")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        if (from.isAfter(to)) {
+            throw new IllegalArgumentException("From date cannot be after To date");
+        }
+
+        return ResponseEntity.ok(ApiResponse.ok(dashboardService.getOrderAnalytics(from, to)));
+    }
 }

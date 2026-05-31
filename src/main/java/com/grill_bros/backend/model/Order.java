@@ -2,6 +2,7 @@ package com.grill_bros.backend.model;
 
 import com.github.f4b6a3.ulid.UlidCreator;
 import com.grill_bros.backend.records.OrderStatus;
+import com.grill_bros.backend.records.PaymentMethod;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -58,6 +59,10 @@ public class Order extends BaseEntity {
     @Column(name = "status", nullable = false, length = 20)
     private OrderStatus status = OrderStatus.CONFIRMED;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", length = 20, nullable = false)
+    private PaymentMethod paymentMethod = PaymentMethod.MOBILE_MONEY;
+
     @Column(name = "subtotal", nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
 
@@ -70,7 +75,6 @@ public class Order extends BaseEntity {
     @Column(name = "tracking_token", unique = true, length = 12)
     private String trackingToken;
 
-    /** Set when an admin places an order on behalf of a customer */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "placed_by_admin_id")
     private Users placedByAdmin;
@@ -83,7 +87,8 @@ public class Order extends BaseEntity {
                                String customerPhone,
                                String customerEmail,
                                String notes,
-                               String trackingToken) {
+                               String trackingToken,
+                               PaymentMethod paymentMethod) {
         Order o         = new Order();
         o.orderNumber   = orderNumber;
         o.customerName  = customerName;
@@ -92,6 +97,7 @@ public class Order extends BaseEntity {
         o.notes         = notes;
         o.status        = OrderStatus.CONFIRMED;
         o.trackingToken = trackingToken;
+        o.paymentMethod = paymentMethod;
         return o;
     }
 
@@ -108,11 +114,6 @@ public class Order extends BaseEntity {
         this.totalAmount = this.subtotal;
     }
 
-    /**
-     * Guards against invalid state transitions at the domain level.
-     * Throws {@link IllegalStateException} rather than a checked exception
-     * so callers at the service layer can wrap with the appropriate HTTP status.
-     */
     public void transitionTo(OrderStatus next) {
         if (!this.status.canTransitionTo(next)) {
             throw new IllegalStateException(

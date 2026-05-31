@@ -1,5 +1,6 @@
 package com.grill_bros.backend.dto.ordersdto;
 
+import com.grill_bros.backend.records.PaymentMethod;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -21,6 +22,9 @@ public class CreateOrderRequest {
             message = "Invalid Ghanaian phone number"
     )
     private String customerPhone;
+
+    @NotBlank(message = "Payment method is required")
+    private PaymentMethod paymentMethod;
 
     @Email(message = "Invalid email address")
     @Size(max = 255)

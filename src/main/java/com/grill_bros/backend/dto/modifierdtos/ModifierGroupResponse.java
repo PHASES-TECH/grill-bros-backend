@@ -18,7 +18,7 @@ public class ModifierGroupResponse {
     private int maxSelections;
 
     private UUID menuItemId;
-
+    private String menuItemName;
     private List<ModifierResponse> modifiers;
 
     public static ModifierGroupResponse from(ModifierGroup group) {
@@ -29,6 +29,7 @@ public class ModifierGroupResponse {
                 .minSelections(group.getMinSelections())
                 .maxSelections(group.getMaxSelections())
                 .menuItemId(group.getMenuItem().getId())
+                .menuItemName(group.getMenuItem().getName())
                 .modifiers(group.getModifiers() != null
                         ? group.getModifiers().stream()
                         .map(ModifierResponse::from)

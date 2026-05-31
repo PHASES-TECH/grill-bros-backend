@@ -6,9 +6,7 @@ import com.grill_bros.backend.dto.dashboarddtos.RevenueResponse;
 import com.grill_bros.backend.dto.dashboarddtos.TopItemResponse;
 import com.grill_bros.backend.model.Order;
 import com.grill_bros.backend.model.OrderItem;
-import com.grill_bros.backend.records.CategoryQuantityDistribution;
-import com.grill_bros.backend.records.CategoryRevenueDistribution;
-import com.grill_bros.backend.records.OrderStatus;
+import com.grill_bros.backend.records.*;
 import com.grill_bros.backend.repository.MenuItemRepository;
 import com.grill_bros.backend.repository.OrderRepository;
 import com.grill_bros.backend.service.cacheservice.CacheService;
@@ -202,5 +200,67 @@ public class DashboardService {
                 .sorted((a, b) ->
                         b.revenue().compareTo(a.revenue()))
                 .toList();
+    }
+
+    public OrderAnalyticsResponse getOrderAnalytics(
+            LocalDate from,
+            LocalDate to
+    ) {
+        Instant fromInstant = from.atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant toInstant = to.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+
+        List<AdminOrderStats> adminStats =
+                orderRepository.getAdminOrderStatsRaw(fromInstant, toInstant)
+                        .stream()
+                        .map(row -> {
+
+                            UUID adminId = (UUID) row[0];
+                            String adminName = (String) row[1];
+                            Long totalOrders = (Long) row[2];
+                            BigDecimal totalRevenue = (BigDecimal) row[3];
+
+                            BigDecimal avgOrderValue = BigDecimal.ZERO;
+
+                            if (totalOrders != null && totalOrders > 0) {
+                                avgOrderValue = totalRevenue.divide(
+                                        BigDecimal.valueOf(totalOrders),
+                                        2,
+                                        RoundingMode.HALF_UP
+                                );
+                            }
+
+                            return new AdminOrderStats(
+                                    adminId,
+                                    adminName,
+                                    totalOrders,
+                                    totalRevenue,
+                                    avgOrderValue
+                            );
+                        })
+                        .toList();
+
+        List<PaymentMethodOrderCount> orderCounts =
+                orderRepository.countOrdersByPaymentMethod(fromInstant, toInstant)
+                        .stream()
+                        .map(row -> new PaymentMethodOrderCount(
+                                (PaymentMethod) row[0],
+                                (Long) row[1]
+                        ))
+                        .toList();
+
+        List<PaymentMethodRevenue> revenues =
+                orderRepository.revenueByPaymentMethod(fromInstant, toInstant)
+                        .stream()
+                        .map(row -> new PaymentMethodRevenue(
+                                (PaymentMethod) row[0],
+                                (BigDecimal) row[1]
+                        ))
+                        .toList();
+
+        return new OrderAnalyticsResponse(
+                adminStats,
+                orderCounts,
+                revenues
+        );
     }
 }

@@ -2,6 +2,7 @@ package com.grill_bros.backend.dto.ordersdto;
 
 import com.grill_bros.backend.model.Order;
 import com.grill_bros.backend.records.OrderStatus;
+import com.grill_bros.backend.records.PaymentMethod;
 import com.grill_bros.backend.records.PaymentStatus;
 import lombok.Builder;
 import lombok.Data;
@@ -22,6 +23,7 @@ public class OrderResponse {
     private String      customerPhone;
     private String      customerEmail;
     private OrderStatus status;
+    private PaymentMethod paymentMethod;
     private BigDecimal  subtotal;
     private BigDecimal  totalAmount;
     private String      notes;
@@ -39,6 +41,7 @@ public class OrderResponse {
                 .customerPhone(o.getCustomerPhone())
                 .customerEmail(o.getCustomerEmail())
                 .status(o.getStatus())
+                .paymentMethod(o.getPaymentMethod())
                 .subtotal(o.getSubtotal())
                 .totalAmount(o.getTotalAmount())
                 .notes(o.getNotes())
@@ -60,6 +63,7 @@ public class OrderResponse {
                 .customerName(o.getCustomerName())
                 .customerPhone(o.getCustomerPhone())
                 .status(o.getStatus())
+                .paymentMethod(o.getPaymentMethod())
                 .totalAmount(o.getTotalAmount())
                 .trackingToken(o.getTrackingToken())
                 .placedByAdminName(o.getPlacedByAdmin() != null
