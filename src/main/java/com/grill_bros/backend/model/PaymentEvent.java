@@ -1,5 +1,6 @@
 package com.grill_bros.backend.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.grill_bros.backend.records.PaymentEventType;
 import com.grill_bros.backend.records.PaymentStatus;
 import jakarta.persistence.*;
@@ -19,6 +20,7 @@ import java.util.UUID;
         name = "payment_events",
         indexes = {
                 @Index(name = "idx_pay_event_payment", columnList = "payment_id"),
+                @Index(name = "idx_pay_event_type",    columnList = "event_type"),
                 @Index(name = "idx_pay_event_created", columnList = "created_at"),
         }
 )
@@ -46,10 +48,10 @@ public class PaymentEvent {
     @Column(name = "new_status", length = 50)
     private String newStatus;
 
-    /** Raw MoMo webhook payload stored as JSONB for full audit */
+    /** Raw Paystack webhook or API response payload stored as JSONB */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "payload", columnDefinition = "jsonb")
-    private String payload;
+    private JsonNode payload;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -58,9 +60,9 @@ public class PaymentEvent {
 
     public static PaymentEvent of(Payment payment, PaymentEventType eventType,
                                   PaymentStatus oldStatus, PaymentStatus newStatus,
-                                  String payload) {
+                                  JsonNode payload) {
         PaymentEvent e  = new PaymentEvent();
-        e.payment       = payment;
+        e.payment    = payment;
         e.eventType     = eventType;
         e.oldStatus     = oldStatus  != null ? oldStatus.name()  : null;
         e.newStatus     = newStatus  != null ? newStatus.name()  : null;
@@ -73,7 +75,7 @@ public class PaymentEvent {
             Payment payment,
             PaymentStatus oldStatus,
             PaymentStatus newStatus,
-            String payload
+            JsonNode payload
     ) {
         return of(payment,
                 PaymentEventType.WEBHOOK_RECEIVED,
@@ -92,7 +94,7 @@ public class PaymentEvent {
         );
     }
 
-    public static PaymentEvent requestSent(Payment payment, String payload) {
+    public static PaymentEvent requestSent(Payment payment, JsonNode payload) {
         return of(payment,
                 PaymentEventType.REQUEST_TO_PAY_SENT,
                 null,
@@ -104,7 +106,7 @@ public class PaymentEvent {
     public static PaymentEvent failed(
             Payment payment,
             PaymentStatus oldStatus,
-            String reason
+            JsonNode reason
     ) {
         return of(payment,
                 PaymentEventType.PAYMENT_FAILED,

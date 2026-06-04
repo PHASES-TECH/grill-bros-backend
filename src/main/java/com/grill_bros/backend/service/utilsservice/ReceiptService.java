@@ -7,6 +7,7 @@ import com.grill_bros.backend.model.Payment;
 import com.grill_bros.backend.model.Receipt;
 import com.grill_bros.backend.records.ReceiptStatus;
 import com.grill_bros.backend.repository.OrderRepository;
+import com.grill_bros.backend.repository.PaymentRepository;
 import com.grill_bros.backend.repository.ReceiptRepository;
 import com.grill_bros.backend.service.smsservice.SmsProviderService;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class ReceiptService {
     private final OrderRepository orderRepository;
     private final ReceiptStorageService receiptStorageService;
     private final SmsProviderService smsProviderService;
+    private final PaymentRepository paymentRepository;
 
     public Page<PaymentReceiptResponse> getAllPaymentReceipts(Pageable pageable) {
         return receiptRepository.findAll(pageable).map(PaymentReceiptResponse::summary);
@@ -40,7 +42,7 @@ public class ReceiptService {
     public void generateAndSendReceipt(Payment payment) {
 
         // 🔒 Prevent duplicate receipts
-        if (receiptRepository.findByPaymentId(payment.getId()).isPresent()) {
+        if (receiptRepository.findByPayment_Id(payment.getId()).isPresent()) {
             return;
         }
 
@@ -50,7 +52,6 @@ public class ReceiptService {
                 .amount(payment.getAmount())
                 .currency("GHS")
                 .payment(payment)
-                .orderId(payment.getOrder().getId())
                 .customerName(payment.getOrder().getCustomerName())
                 .customerEmail(payment.getOrder().getCustomerEmail())
                 .customerPhone(payment.getOrder().getCustomerPhone())
@@ -99,9 +100,11 @@ public class ReceiptService {
     }
 
     @Transactional
-    public void adminGenerateAndSendReceipt(String orderId) {
+    public void adminGenerateAndSendReceipt(String paymentId) {
 
-        Receipt receipt = receiptRepository.findByOrderId(orderId)
+        Payment payment = paymentRepository.findById(paymentId).orElseThrow(() -> new ResourceNotFoundException("Payment"));
+
+        Receipt receipt = receiptRepository.findByPayment_Id(paymentId)
                 .map(existing -> {
                     if (existing.getStatus() == ReceiptStatus.SENT) {
                         return existing;
@@ -113,7 +116,7 @@ public class ReceiptService {
                     return existing;
                 })
                 .orElseGet(() -> {
-                    Order order = orderRepository.findById(orderId)
+                    Order order = orderRepository.findById(payment.getOrder().getId())
                             .orElseThrow(() ->
                                     new ResourceNotFoundException("Order not found"));
 
@@ -121,7 +124,6 @@ public class ReceiptService {
                             .reference(generateReference())
                             .amount(order.getTotalAmount())
                             .currency("GHS")
-                            .orderId(order.getId())
                             .customerName(order.getCustomerName())
                             .customerEmail(order.getCustomerEmail())
                             .customerPhone(order.getCustomerPhone())

@@ -13,34 +13,52 @@ import java.time.Instant;
 @Builder
 public class PaymentResponse {
 
-    private String        id;
-    private Order order;
+    private String id;
+
+    private String orderId;
+    private String orderNumber;
+
     private PaymentStatus status;
-    private String      provider;
-    private String      phoneNumber;
-    private String momoReference;
-    private Instant initiatedAt;
-    private String  failureReason;
-    private String      externalId;
-    private String      currency;
+
+    private String reference;
+    private String accessCode;
+    private String authorizationUrl;
+    private String paystackTransactionId;
+
+    private String customerEmail;
+    private String customerPhone;
+
     private BigDecimal amount;
+    private String currency;
+
+    private String gatewayResponse;
+    private String channel;
+
+    private Instant initiatedAt;
+    private Instant paidAt;
     private Instant completedAt;
+
     private Instant createdAt;
-    private Instant     updatedAt;
+    private Instant updatedAt;
 
     public static PaymentResponse from(Payment p) {
         return PaymentResponse.builder()
                 .id(p.getId())
-                .order(p.getOrder())
+                .orderId(p.getOrder().getId())
+                .orderNumber(p.getOrder().getOrderNumber())
                 .status(p.getStatus())
-                .provider(p.getProvider())
-                .phoneNumber(p.getPhoneNumber())
-                .momoReference(p.getMomoReference())
-                .initiatedAt(p.getInitiatedAt())
-                .failureReason(p.getFailureReason())
-                .externalId(p.getExternalId())
-                .currency(p.getCurrency())
+                .reference(p.getReference())
+                .accessCode(p.getAccessCode())
+                .authorizationUrl(p.getAuthorizationUrl())
+                .paystackTransactionId(p.getPaystackTransactionId())
+                .customerEmail(p.getCustomerEmail())
+                .customerPhone(p.getCustomerPhone())
                 .amount(p.getAmount())
+                .currency(p.getCurrency())
+                .gatewayResponse(p.getGatewayResponse())
+                .channel(p.getChannel())
+                .initiatedAt(p.getInitiatedAt())
+                .paidAt(p.getPaidAt())
                 .completedAt(p.getCompletedAt())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
@@ -50,12 +68,14 @@ public class PaymentResponse {
     public static PaymentResponse summary(Payment p) {
         return PaymentResponse.builder()
                 .id(p.getId())
+                .orderNumber(p.getOrder().getOrderNumber())
                 .status(p.getStatus())
-                .provider(p.getProvider())
-                .phoneNumber(p.getPhoneNumber())
-                .momoReference(p.getMomoReference())
-                .initiatedAt(p.getInitiatedAt())
+                .reference(p.getReference())
+                .customerPhone(p.getCustomerPhone())
                 .amount(p.getAmount())
+                .currency(p.getCurrency())
+                .channel(p.getChannel())
+                .initiatedAt(p.getInitiatedAt())
                 .completedAt(p.getCompletedAt())
                 .build();
     }

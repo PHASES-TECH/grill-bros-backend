@@ -67,8 +67,8 @@ public class AdminNotificationService {
                 ? "PAYMENT_RECEIVED" : "PAYMENT_FAILED";
 
         broadcast(type, Map.of(
-                "orderId",       event.getOrderId(),
-                "orderNumber",   event.getOrderNumber(),
+                "orderId",       event.getOrder().getId(),
+                "orderNumber",   event.getOrder().getOrderNumber(),
                 "status",        event.getStatus(),
                 "amount",        event.getAmount(),
                 "phoneNumber",   event.getPhoneNumber(),

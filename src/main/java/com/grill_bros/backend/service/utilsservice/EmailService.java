@@ -86,7 +86,7 @@ public class EmailService {
 
     @Async
     public void sendReceiptEmail(String to, Receipt receipt, byte[] pdfBytes) {
-        Order order = orderRepository.findByIdWithItems(receipt.getOrderId())
+        Order order = orderRepository.findByIdWithItems(receipt.getPayment().getOrder().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         try {
@@ -119,16 +119,11 @@ public class EmailService {
     }
 
     private String buildSubject(Receipt receipt) {
-        Order order = orderRepository.findById(receipt.getOrderId())
+        Order order = orderRepository.findById(receipt.getPayment().getOrder().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         return "🧾 Your GrillBros Receipt — " + order.getOrderNumber();
     }
-
-    /**
-     * Plain text fallback for email clients that don't render HTML.
-     * Mirrors the key information from the HTML template in a readable format.
-     */
 
     private String buildOtpHtml(String name, String otp) {
         return """

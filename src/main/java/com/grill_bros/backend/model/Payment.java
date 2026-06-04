@@ -7,14 +7,17 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(
         name = "payments",
         indexes = {
-                @Index(name = "idx_payment_order",    columnList = "order_id",   unique = true),
-                @Index(name = "idx_payment_status",   columnList = "status"),
-                @Index(name = "idx_payment_external", columnList = "external_id", unique = true),
+                @Index(name = "idx_payment_order",      columnList = "order_id",    unique = true),
+                @Index(name = "idx_payment_status",     columnList = "status"),
+                @Index(name = "idx_payment_reference",  columnList = "reference",   unique = true),
+                @Index(name = "idx_payment_access_code",columnList = "access_code"),
         }
 )
 @Getter
@@ -35,22 +38,30 @@ public class Payment extends BaseEntity {
     }
 
     @EqualsAndHashCode.Include
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "order_id", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @Column(name = "provider", nullable = false, length = 50)
-    private String provider = "MTN_MOMO";
+    @OneToOne(mappedBy = "payment")
+    private Receipt receipt;
 
-    @Column(name = "momo_reference", length = 255)
-    private String momoReference;
+    @Column(name = "reference", nullable = false, unique = true, length = 100)
+    private String reference;
 
-    /** UUID we send to MoMo as our external reference — used for idempotency */
-    @Column(name = "external_id", nullable = false, unique = true, length = 255)
-    private String externalId;
+    @Column(name = "access_code", length = 100)
+    private String accessCode;
 
-    @Column(name = "phone_number", nullable = false, length = 20)
-    private String phoneNumber;
+    @Column(name = "authorization_url", length = 500)
+    private String authorizationUrl;
+
+    @Column(name = "paystack_transaction_id", length = 100)
+    private String paystackTransactionId;
+
+    @Column(name = "customer_email", nullable = false, length = 255)
+    private String customerEmail;
+
+    @Column(name = "customer_phone", length = 20)
+    private String customerPhone;
 
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
@@ -62,8 +73,21 @@ public class Payment extends BaseEntity {
     @Column(name = "status", nullable = false, length = 20)
     private PaymentStatus status = PaymentStatus.INITIATED;
 
-    @Column(name = "failure_reason", columnDefinition = "TEXT")
-    private String failureReason;
+    @Column(name = "gateway_response", length = 255)
+    private String gatewayResponse;
+
+    @Column(name = "channel", length = 50)
+    private String channel;            // card, mobile_money, bank, ussd
+
+    @Column(name = "paid_at")
+    private Instant paidAt;
+
+    @OneToMany(
+            mappedBy = "payment",
+            cascade = CascadeType.ALL,
+            orphanRemoval = false
+    )
+    private Set<PaymentEvent> events = new HashSet<>();
 
     @Column(name = "initiated_at", nullable = false)
     private Instant initiatedAt;
@@ -71,29 +95,40 @@ public class Payment extends BaseEntity {
     @Column(name = "completed_at")
     private Instant completedAt;
 
-    public static Payment create(Order order, String externalId,
-                                 String phoneNumber, BigDecimal amount) {
-        Payment p     = new Payment();
-        p.order       = order;
-        p.externalId  = externalId;
-        p.phoneNumber = phoneNumber;
-        p.amount      = amount;
-        p.status      = PaymentStatus.INITIATED;
-        p.initiatedAt = Instant.now();
+    public static Payment create(Order order, String reference,
+                                 String customerEmail, String customerPhone,
+                                 BigDecimal amount) {
+        Payment p         = new Payment();
+        p.order        = order;
+        p.reference       = reference;
+        p.customerEmail   = customerEmail;
+        p.customerPhone   = customerPhone;
+        p.amount          = amount;
+        p.status          = PaymentStatus.INITIATED;
+        p.initiatedAt     = Instant.now();
         return p;
     }
 
-    public void transitionTo(PaymentStatus next, String failureReason) {
+    public void transitionTo(PaymentStatus next) {
         if (!this.status.canTransitionTo(next)) {
             throw new IllegalStateException(
                     "Payment cannot transition from " + status + " to " + next);
         }
         this.status = next;
-        if (next.isTerminal()) {
-            this.completedAt = Instant.now();
-        }
-        if (failureReason != null) {
-            this.failureReason = failureReason;
-        }
+        if (next.isTerminal()) this.completedAt = Instant.now();
+    }
+
+    public void markSuccessful(String paystackTxId, String gatewayResponse,
+                               String channel, Instant paidAt) {
+        transitionTo(PaymentStatus.SUCCESSFUL);
+        this.paystackTransactionId = paystackTxId;
+        this.gatewayResponse       = gatewayResponse;
+        this.channel               = channel;
+        this.paidAt                = paidAt;
+    }
+
+    public void markFailed(String gatewayResponse) {
+        transitionTo(PaymentStatus.FAILED);
+        this.gatewayResponse = gatewayResponse;
     }
 }

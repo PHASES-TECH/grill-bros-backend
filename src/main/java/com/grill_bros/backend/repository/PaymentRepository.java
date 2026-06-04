@@ -14,40 +14,18 @@ import java.util.UUID;
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, String> {
 
-    Optional<Payment> findByOrderId(String orderId);
+    Optional<Payment> findByOrder_Id(String orderId);
 
-    Optional<Payment> findByExternalId(String externalId);
+    boolean existsByReference(String reference);
 
-    boolean existsByExternalId(String externalId);
+    boolean existsByOrder_Id(String orderId);
 
-    boolean existsByOrderId(String orderId);
+    Optional<Payment> findByReference(String externalId);
 
-    Optional<Payment> findTopByOrderIdOrderByCreatedAtDesc(String orderId);
-
-    /**
-     * Reconciliation job: find PENDING payments older than a threshold
-     */
     @Query("""
             SELECT p FROM Payment p
             WHERE  p.status      = com.grill_bros.backend.records.PaymentStatus.PENDING
               AND  p.initiatedAt < :threshold
             """)
     List<Payment> findStalePayments(@Param("threshold") Instant threshold);
-
-    @Query("""
-            SELECT p FROM Payment p
-            WHERE p.order.id = :orderId
-            ORDER BY p.createdAt DESC
-            """)
-    List<Payment> findByOrderOrderByCreatedAtDesc(UUID orderId);
-
-    /**
-     * Fetch payment with its order in one query for webhook processing
-     */
-    @Query("""
-            SELECT p FROM Payment p
-            JOIN FETCH p.order
-            WHERE p.externalId = :externalId
-            """)
-    Optional<Payment> findByExternalIdWithOrder(@Param("externalId") String externalId);
 }

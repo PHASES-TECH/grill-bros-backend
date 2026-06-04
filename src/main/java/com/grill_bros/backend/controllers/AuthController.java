@@ -12,6 +12,8 @@ import com.grill_bros.backend.dto.passwordreset.VerifyOtpRequestPasswordReset;
 import com.grill_bros.backend.model.RefreshToken;
 import com.grill_bros.backend.model.UserPrincipal;
 import com.grill_bros.backend.model.Users;
+import com.grill_bros.backend.records.GoogleLoginRequest;
+import com.grill_bros.backend.records.VerifyGoogleOtpRequest;
 import com.grill_bros.backend.repository.UserRepository;
 import com.grill_bros.backend.service.authenticationservice.AuthenticationOtpService;
 import com.grill_bros.backend.service.jwtservice.JWTService;
@@ -301,5 +303,58 @@ public class AuthController {
 
         passwordResetService.resetPassword(request);
         return ResponseEntity.ok(new MessageResponse("Password reset successfully"));
+    }
+
+    @PostMapping("/auth/google")
+    public ResponseEntity<?> googleLogin(
+            @RequestBody GoogleLoginRequest request
+    ) throws Exception {
+        return ResponseEntity.ok(
+                userService.googleLoginSendOtp(request)
+        );
+    }
+
+    @PostMapping("/auth/google/verify-otp")
+    public ResponseEntity<AuthResponse> verifyOtp(
+            @RequestBody VerifyGoogleOtpRequest request
+    ) {
+        String accessToken = userService.verifyUserOtpGoogleLogin(request);
+        Users user = userService.findUserbyEmail(request.email());
+        user.setLastLoginAt(Instant.now());
+        userRepository.save(user);
+
+        Users loggedInUser = userService.findUserWithContext(user.getId());
+
+        userSessionService.createSession(user.getEmail(), accessToken);
+
+        ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+//                .sameSite("SameSite")
+                .path("/")
+//                .domain("localhost")
+                .maxAge(Duration.ofHours(24))
+                .build();
+
+//        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())
+//                .httpOnly(true)
+//                .secure(true)
+//                .sameSite("None")
+////                .sameSite("SameSite")
+//                .path("/")
+////                .domain("localhost")
+//                .maxAge(Duration.ofDays(30))
+//                .build();
+
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+//                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(AuthResponse.builder()
+                        .message("Login successful")
+                        .user(UserResponseDto.from(loggedInUser))
+                        .build()
+                );
     }
 }

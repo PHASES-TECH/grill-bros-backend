@@ -44,7 +44,7 @@ public class PasswordResetService {
     @Transactional
     public OtpResponsePasswordReset requestPasswordReset(ForgotPasswordRequest request) {
         // Find user by phone number
-        Users user = userRepository.findByEmail(request.getEmail());
+        Users user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 //                .orElseThrow(() -> new ResourceNotFoundException("No account found with this phone number"));
         if (user == null) {
             throw new ResourceNotFoundException("User not found");
@@ -100,7 +100,7 @@ public class PasswordResetService {
 
     @Transactional
     public void verifyOtp(VerifyOtpRequestPasswordReset request) {
-        Users user = userRepository.findByEmail(request.getEmail());
+        Users user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 //                .orElseThrow(() -> new ResourceNotFoundException("No account found with this phone number"));
         if (user == null) {
             throw new ResourceNotFoundException("User not found");
@@ -138,7 +138,7 @@ public class PasswordResetService {
 
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
-        Users user = userRepository.findByEmail(request.getEmail());
+        Users user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 //                .orElseThrow(() -> new ResourceNotFoundException("No account found with this phone number"));
         if (user == null) {
             throw new ResourceNotFoundException("User not found");

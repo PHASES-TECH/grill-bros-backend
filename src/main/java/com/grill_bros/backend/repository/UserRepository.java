@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @Repository
 public interface UserRepository extends JpaRepository<Users, UUID> {
-    Users findByEmail(String email);
+    Optional<Users> findByEmail(String email);
 
     Optional<Users> findUserByEmail(String email);
 

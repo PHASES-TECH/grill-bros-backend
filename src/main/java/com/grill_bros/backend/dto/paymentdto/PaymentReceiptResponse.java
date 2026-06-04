@@ -35,7 +35,6 @@ public class PaymentReceiptResponse {
                 .payment(receipt.getPayment())
                 .reference(receipt.getReference())
                 .status(receipt.getStatus())
-                .orderId(receipt.getOrderId())
                 .customerName(receipt.getCustomerName())
                 .customerEmail(receipt.getCustomerEmail())
                 .customerPhone(receipt.getCustomerPhone())

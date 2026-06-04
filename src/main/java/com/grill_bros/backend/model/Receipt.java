@@ -3,10 +3,7 @@ package com.grill_bros.backend.model;
 import com.github.f4b6a3.ulid.UlidCreator;
 import com.grill_bros.backend.records.ReceiptStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -14,11 +11,17 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "payment_receipts")
+@Table(
+        name = "payment_receipts",
+        indexes = {
+                @Index(name = "idx_receipt_reference", columnList = "reference", unique = true)
+        }
+)
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 public class Receipt extends BaseEntity{
 
     @Id
@@ -37,13 +40,15 @@ public class Receipt extends BaseEntity{
 
     private BigDecimal amount;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "payment_id")
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "payment_id",
+            nullable = false,
+            unique = true
+    )
     private Payment payment;
 
     private String currency;
-
-    private String orderId;
 
     private String customerName;
 
@@ -51,7 +56,7 @@ public class Receipt extends BaseEntity{
 
     private String customerPhone;
 
-    private String pdfUrl; // if stored in S3/local
+    private String pdfUrl;
 
     @Enumerated(EnumType.STRING)
     private ReceiptStatus status;

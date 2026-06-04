@@ -40,6 +40,11 @@ public class Users {
     @Column(nullable = false)
     private Role role;
 
+    @Column(unique = true)
+    private String googleId;
+
+    private Instant lastGoogleLogin;
+
     private boolean isVerified;
 
     private boolean isPhoneNumberVerified;
@@ -64,6 +69,10 @@ public class Users {
         u.fullName      = fullName;
         u.role          = role;
         return u;
+    }
+
+    public boolean isAdminRole() {
+        return this.role != Role.USER;
     }
 
     public void recordLogin()  { this.lastLoginAt = Instant.now(); }

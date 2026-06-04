@@ -67,7 +67,7 @@ public class PdfService {
 
     public byte[] generateReceiptPdf(Receipt receipt) {
 
-        Order order = orderRepository.findByIdWithItems(receipt.getOrderId())
+        Order order = orderRepository.findByIdWithItems(receipt.getPayment().getOrder().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();

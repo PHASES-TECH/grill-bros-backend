@@ -6,7 +6,7 @@ public enum OrderStatus {
     PREPARING,
 //    READY,
     COMPLETED,
-//    DELIVERED,
+    PAYMENT_FAILED,
     CANCELLED;
 
     public boolean isTerminal() {
@@ -15,12 +15,12 @@ public enum OrderStatus {
 
     public boolean canTransitionTo(OrderStatus next) {
         return switch (this) {
-            case PENDING    -> next == CONFIRMED || next == CANCELLED;
-            case CONFIRMED  -> next == PREPARING || next == CANCELLED;
+            case PENDING    -> next == CONFIRMED || next == CANCELLED || next == PAYMENT_FAILED;
+            case CONFIRMED  -> next == PREPARING || next == CANCELLED || next == PAYMENT_FAILED;
             case PREPARING  -> next == COMPLETED || next == CANCELLED;
 //            case READY      -> next == COMPLETED || next  == DELIVERED || next == CANCELLED;
             case COMPLETED,
-                 CANCELLED  -> false;
+                 CANCELLED, PAYMENT_FAILED  -> false;
         };
     }
 }

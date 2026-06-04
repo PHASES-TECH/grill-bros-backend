@@ -7,11 +7,13 @@ import com.grill_bros.backend.exceptions.ResourceNotFoundException;
 import com.grill_bros.backend.exceptions.passwordexceptions.*;
 import com.grill_bros.backend.model.UserAuthenticationOtp;
 import com.grill_bros.backend.model.Users;
+import com.grill_bros.backend.records.VerifyGoogleOtpRequest;
 import com.grill_bros.backend.repository.OtpRepository;
 import com.grill_bros.backend.repository.UserRepository;
 import com.grill_bros.backend.service.smsservice.SmsProviderService;
 import com.grill_bros.backend.service.utilsservice.EmailService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthenticationOtpService {
@@ -98,20 +101,16 @@ public class AuthenticationOtpService {
         UserAuthenticationOtp otpRecord = otpRepository.findByOtpAndPhoneNumberAndIsUsedFalseAndIsLockedFalse(request.getOtp(), request.getPhoneNumber())
                 .orElseThrow(() -> new InvalidOtpException("Invalid or expired OTP"));
 
-        // Verify phone number matches
         if (!otpRecord.getPhoneNumber().equals(phoneNumber)) {
             throw new InvalidOtpException("Invalid OTP");
         }
 
-        // Check if OTP is expired
         if (otpRecord.getExpiresAt().isBefore(Instant.now())) {
             throw new OtpExpiredException("OTP has expired. Please request a new one.");
         }
 
-        // Increment attempt count
         otpRecord.setAttemptCount(otpRecord.getAttemptCount() + 1);
 
-        // Lock OTP if max attempts exceeded
         if (otpRecord.getAttemptCount() >= MAX_ATTEMPTS) {
             otpRecord.setIsLocked(true);
             otpRepository.save(otpRecord);
@@ -120,7 +119,51 @@ public class AuthenticationOtpService {
 
         otpRepository.save(otpRecord);
 
-//        log.info("OTP verified successfully for user: {}", otpRecord.getUser().getId());
+        log.info("OTP verified successfully for user: {}", otpRecord.getUser().getId());
+    }
+
+    @Transactional
+    public void verifyGoogleLoginOtp(VerifyGoogleOtpRequest request) {
+
+        UserAuthenticationOtp otpRecord = otpRepository.findTopByEmailAndUsedFalseOrderByCreatedAtDesc(request.email())
+                .orElseThrow(() -> new InvalidOtpException("Invalid or expired OTP"));
+
+        if (otpRecord.isUsed()) {
+            throw new RuntimeException(
+                    "OTP already used"
+            );
+        }
+
+        if (Instant.now().isAfter(
+                otpRecord.getExpiresAt()
+        )) {
+            throw new RuntimeException(
+                    "OTP expired"
+            );
+        }
+
+        // Verify phone number matches
+        if (!otpRecord.getEmail().equals(request.email())) {
+            throw new InvalidOtpException("Invalid OTP");
+        }
+
+        if (otpRecord.getExpiresAt().isBefore(Instant.now())) {
+            throw new OtpExpiredException("OTP has expired. Please request a new one.");
+        }
+
+        otpRecord.setAttemptCount(otpRecord.getAttemptCount() + 1);
+
+        if (otpRecord.getAttemptCount() >= MAX_ATTEMPTS) {
+            otpRecord.setIsLocked(true);
+            otpRepository.save(otpRecord);
+            throw new OtpLockedException("Too many failed attempts. Please request a new OTP.");
+        }
+
+        otpRecord.setIsUsed(true);
+
+        otpRepository.save(otpRecord);
+
+        log.info("OTP verified successfully for user: {}", otpRecord.getUser().getId());
     }
 
     private String generateOtp() {

@@ -11,13 +11,18 @@ import com.grill_bros.backend.exceptions.passwordexceptions.InvalidOtpException;
 import com.grill_bros.backend.model.UserAuthenticationOtp;
 import com.grill_bros.backend.model.UserPrincipal;
 import com.grill_bros.backend.model.Users;
+import com.grill_bros.backend.records.GoogleLoginRequest;
+import com.grill_bros.backend.records.VerifyGoogleOtpRequest;
 import com.grill_bros.backend.repository.OtpRepository;
 import com.grill_bros.backend.repository.UserRepository;
 import com.grill_bros.backend.service.authenticationservice.AuthenticationOtpService;
+import com.grill_bros.backend.service.authenticationservice.GoogleAuthService;
 import com.grill_bros.backend.service.jwtservice.JWTService;
 import com.grill_bros.backend.service.smsservice.SmsProviderService;
+import com.grill_bros.backend.service.utilsservice.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -26,9 +31,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 
 @Service
@@ -38,6 +46,9 @@ public class UserService {
     private final UserRepository userRepository;
     private final OtpRepository otpRepository;
     private final SmsProviderService smsProviderService;
+    private final GoogleAuthService googleAuthService;
+    private final EmailService emailService;
+
 
     @Autowired
     private AuthenticationManager authManager;
@@ -99,6 +110,16 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public String verifyUserOtpGoogleLogin(VerifyGoogleOtpRequest request) {
+        authenticationOtpService.verifyGoogleLoginOtp(request);
+
+        Users user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        return jwtService.generateToken(user);
+    }
+
+
     public void verifyNewUser(UUID userId) {
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -131,6 +152,13 @@ public class UserService {
 
     public Users findUserbyPhone(String phoneNumber) {
         Users user = userRepository.findByPhoneNumber(phoneNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        return user;
+    }
+
+    public Users findUserbyEmail(String email) {
+        Users user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return user;
@@ -192,6 +220,63 @@ public class UserService {
             // Catch any other authentication exceptions
             throw new InvalidCredentialsException();
         }
+    }
+
+    @Transactional
+    public String googleLoginSendOtp(
+            GoogleLoginRequest request
+    ) throws Exception {
+
+        var payload =
+                googleAuthService.verify(
+                        request.idToken()
+                );
+
+        String email = payload.getEmail();
+
+        Users user =
+                userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!user.isAdminRole()) {
+            throw new AccessDeniedException(
+                    "Unauthorized"
+            );
+        }
+
+        String googleId = payload.getSubject();
+
+        if (user.getGoogleId() == null) {
+            user.setGoogleId(googleId);
+            userRepository.save(user);
+        }
+
+        if (!googleId.equals(user.getGoogleId())) {
+            throw new AccessDeniedException(
+                    "Google account mismatch"
+            );
+        }
+
+        String otp = generateOtp();
+
+        UserAuthenticationOtp loginOtp = new UserAuthenticationOtp();
+
+        loginOtp.setEmail(email);
+        loginOtp.setOtp(otp);
+        loginOtp.setExpiresAt(
+                Instant.now().plusSeconds(600)
+        );
+
+        otpRepository.save(loginOtp);
+
+        emailService.sendOtpEmail(email, user.getFullName(), otp);
+
+        return "OTP sent successfully";
+    }
+
+    private String generateOtp() {
+        SecureRandom random = new SecureRandom();
+        int otp = 100000 + random.nextInt(900000);
+        return String.valueOf(otp);
     }
 }
 

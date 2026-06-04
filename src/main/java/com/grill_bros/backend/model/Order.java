@@ -1,6 +1,7 @@
 package com.grill_bros.backend.model;
 
 import com.github.f4b6a3.ulid.UlidCreator;
+import com.grill_bros.backend.exceptions.InvalidStateTransitionException;
 import com.grill_bros.backend.records.OrderStatus;
 import com.grill_bros.backend.records.PaymentMethod;
 import jakarta.persistence.*;
@@ -57,7 +58,7 @@ public class Order extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private OrderStatus status = OrderStatus.CONFIRMED;
+    private OrderStatus status = OrderStatus.PENDING;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", length = 20, nullable = false)
@@ -82,6 +83,9 @@ public class Order extends BaseEntity {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<OrderItem> items = new HashSet<>();
 
+    @OneToMany(mappedBy = "order")
+    private List<Payment> payments;
+
     public static Order create(String orderNumber,
                                String customerName,
                                String customerPhone,
@@ -95,7 +99,7 @@ public class Order extends BaseEntity {
         o.customerPhone = customerPhone;
         o.customerEmail = customerEmail;
         o.notes         = notes;
-        o.status        = OrderStatus.CONFIRMED;
+        o.status        = OrderStatus.PENDING;
         o.trackingToken = trackingToken;
         o.paymentMethod = paymentMethod;
         return o;
@@ -120,5 +124,17 @@ public class Order extends BaseEntity {
                     "Order " + orderNumber + " cannot transition from " + status + " to " + next);
         }
         this.status = next;
+    }
+
+    public void validateCanPay() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new InvalidStateTransitionException(
+                    "Cannot initiate payment for order " + this.orderNumber +
+                            " — current status: " + this.status);
+        }
+    }
+
+    public void confirm() {
+        this.status = OrderStatus.CONFIRMED;
     }
 }

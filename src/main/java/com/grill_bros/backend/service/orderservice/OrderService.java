@@ -204,7 +204,7 @@ public class OrderService {
         }
 
         String message = String.format(
-                "Order confirmed! Your order ID is %s. Track your order status anytime using this token %s",
+                "Your order has been created.Please proceed to make payment for order confirmation. Your order ID is %s. Track your order status anytime using this token %s",
                 orderNumber,
                 order.getTrackingToken()
         );

@@ -1,5 +1,6 @@
 package com.grill_bros.backend.model;
 
+import com.grill_bros.backend.records.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,6 +33,8 @@ public class UserAuthenticationOtp extends BaseEntity{
     @Column(nullable = false)
     private String phoneNumber;
 
+    private String email;
+
     @Column(nullable = false)
     private Instant expiresAt;
 
@@ -45,5 +48,9 @@ public class UserAuthenticationOtp extends BaseEntity{
 
     @Column(nullable = false)
     private Boolean isLocked = false;
+
+    public boolean isUsed() {
+        return this.isUsed;
+    }
 }
 

@@ -11,7 +11,5 @@ public interface ReceiptRepository extends JpaRepository<Receipt, String> {
 
     Optional<Receipt> findByReference(String reference);
 
-    Optional<Receipt> findByPaymentId(String paymentId);
-
-    Optional<Receipt> findByOrderId(String orderId);
+    Optional<Receipt> findByPayment_Id(String paymentId);
 }
