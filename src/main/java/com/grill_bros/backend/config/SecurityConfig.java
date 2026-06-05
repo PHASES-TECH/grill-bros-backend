@@ -82,8 +82,8 @@ public class SecurityConfig {
                                 "/api/v1/auth/forgot-password",
                                 "/api/v1/auth/password/verify-otp",
                                 "/api/v1/auth/reset-password").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/menu/**", "/api/v1/orders/track/{trackingToken}").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/orders").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/menu/**", "/api/v1/orders/track/{trackingToken}", "/api/v1/payments/callback").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/orders", "/api/v1/payments/initiate").permitAll()
                         .anyRequest().authenticated())
                 //http.formLogin(Customizer.withDefaults());
                 .httpBasic(Customizer.withDefaults())
