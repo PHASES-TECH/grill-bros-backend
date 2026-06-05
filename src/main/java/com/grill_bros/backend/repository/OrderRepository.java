@@ -21,9 +21,13 @@ public interface OrderRepository extends JpaRepository<Order, String>, JpaSpecif
 
     Optional<Order> findByOrderNumber(String orderNumber);
 
+    Optional<Order> findByCheckoutSessionId(String checkoutSessionId);
+
     boolean existsByOrderNumber(String orderNumber);
 
     long countByCreatedAtBetween(Instant start, Instant end);
+
+    List<Order> findByStatusAndCreatedAtBefore(OrderStatus status, Instant date);
 
     // In OrderRepository
     @Query("""

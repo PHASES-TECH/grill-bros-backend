@@ -20,15 +20,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static java.time.temporal.ChronoUnit.MINUTES;
 
 @Slf4j
 @Service
@@ -48,6 +52,12 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest req) {
+        Optional<Order> existing = orderRepository.findByCheckoutSessionId(req.getCheckoutSessionId());
+
+        if (existing.isPresent()) {
+            return OrderResponse.from(existing.get());
+        }
+
         Order order = buildOrder(req, null);
         addCustomer(req);
         Order saved = orderRepository.save(order);
@@ -175,7 +185,8 @@ public class OrderService {
                 customerEmail,
                 req.getNotes(),
                 generateTrackingToken(),
-                paymentMethod);
+                paymentMethod,
+                req.getCheckoutSessionId());
 
         order.setPlacedByAdmin(placedBy);
         log.info("Items", req.getItems());
@@ -256,5 +267,22 @@ public class OrderService {
             sb.append(chars.charAt(random.nextInt(chars.length())));
         }
         return sb.toString();
+    }
+
+    @Scheduled(fixedRate = 300000)
+    public void expireUnpaidOrders() {
+
+        Instant cutoff = Instant.now().minus(15, MINUTES);
+
+        List<Order> orders =
+                orderRepository.findByStatusAndCreatedAtBefore(
+                        OrderStatus.PENDING,
+                        cutoff
+                );
+
+        for (Order order : orders) {
+            order.setStatus(OrderStatus.CANCELLED);
+            orderRepository.save(order);
+        }
     }
 }

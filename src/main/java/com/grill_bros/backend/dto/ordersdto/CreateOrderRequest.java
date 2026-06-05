@@ -33,6 +33,9 @@ public class CreateOrderRequest {
     @Size(max = 500, message = "Notes must not exceed 500 characters")
     private String notes;
 
+    @Size(max = 500)
+    private String checkoutSessionId;
+
     @NotEmpty(message = "Order must contain at least one item")
     @Valid
     private Set<OrderItemRequest> items;

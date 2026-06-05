@@ -43,7 +43,6 @@ public class Order extends BaseEntity {
     @Column(name = "order_number", nullable = false, unique = true, length = 20)
     private String orderNumber;
 
-    /** Nullable FK — Phase 2 will populate this for logged-in customers */
     @Column(name = "user_id")
     private UUID userId;
 
@@ -55,6 +54,9 @@ public class Order extends BaseEntity {
 
     @Column(name = "customer_email", length = 255)
     private String customerEmail;
+
+    @Column(name = "checkout_session_id", unique = true)
+    private String checkoutSessionId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
@@ -92,7 +94,8 @@ public class Order extends BaseEntity {
                                String customerEmail,
                                String notes,
                                String trackingToken,
-                               PaymentMethod paymentMethod) {
+                               PaymentMethod paymentMethod,
+                               String checkoutSessionId) {
         Order o         = new Order();
         o.orderNumber   = orderNumber;
         o.customerName  = customerName;
@@ -102,6 +105,7 @@ public class Order extends BaseEntity {
         o.status        = OrderStatus.PENDING;
         o.trackingToken = trackingToken;
         o.paymentMethod = paymentMethod;
+        o.checkoutSessionId = checkoutSessionId;
         return o;
     }
 
