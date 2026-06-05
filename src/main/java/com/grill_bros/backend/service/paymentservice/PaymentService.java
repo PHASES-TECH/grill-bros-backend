@@ -269,7 +269,7 @@ public class PaymentService {
                 previous, PaymentStatus.SUCCESSFUL, toJson(verifyData));
 
         // Confirm the order
-        var order = orderRepository.findById(payment.getOrder().getId()).orElseThrow();
+        var order = orderRepository.findById(payment.getOrder().getId()).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
         try {
             order.transitionTo(OrderStatus.CONFIRMED);
             orderRepository.save(order);

@@ -13,11 +13,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import java.util.List;
-
+@Slf4j
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class ReceiptPaymentListener {
 
     private final PaymentRepository paymentRepository;
@@ -30,14 +28,12 @@ public class ReceiptPaymentListener {
     public void onPaymentSuccess(
             PaymentSucceededEvent event
     ) {
-        Payment payment = paymentRepository.findById(event.paymentId()).orElseThrow(() -> new ResourceNotFoundException("Payment"));
-
         try {
-            receiptService.generateAndSendReceipt(payment);
+            receiptService.generateAndSendReceipt(event.paymentId());
 
         } catch (Exception ex) {
             log.error(
-                    "SMS failed for order={}",
+                    "Failed to generate/send receipt for order={}",
                     event.orderNumber(),
                     ex
             );

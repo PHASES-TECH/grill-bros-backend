@@ -82,7 +82,6 @@ public class PaymentReconciliationJob {
             return;
         }
 
-        // Within timeout window — call Paystack to check
         try {
             log.debug("Reconciliation verify: reference={}", payment.getReference());
             paymentService.verifyAndUpdate(payment.getReference());

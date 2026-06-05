@@ -39,14 +39,16 @@ public class ReceiptService {
     }
 
     @Transactional
-    public void generateAndSendReceipt(Payment payment) {
+    public void generateAndSendReceipt(String paymentId) {
 
-        // 🔒 Prevent duplicate receipts
+        Payment payment =
+                paymentRepository.findById(paymentId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Payment"));
+
         if (receiptRepository.findByPayment_Id(payment.getId()).isPresent()) {
             return;
         }
 
-        // 1. Create receipt
         Receipt receipt = Receipt.builder()
                 .reference(generateReference())
                 .amount(payment.getAmount())

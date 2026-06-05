@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -27,7 +28,7 @@ public interface OrderRepository extends JpaRepository<Order, String>, JpaSpecif
 
     long countByCreatedAtBetween(Instant start, Instant end);
 
-    List<Order> findByStatusAndCreatedAtBefore(OrderStatus status, Instant date);
+    Set<Order> findByStatusAndCreatedAtBefore(OrderStatus status, Instant date);
 
     // In OrderRepository
     @Query("""

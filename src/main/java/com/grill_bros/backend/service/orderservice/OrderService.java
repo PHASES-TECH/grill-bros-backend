@@ -269,20 +269,27 @@ public class OrderService {
         return sb.toString();
     }
 
-    @Scheduled(fixedRate = 300000)
+    @Scheduled(
+            fixedDelay = 300000,
+            initialDelay = 60000
+    )
     public void expireUnpaidOrders() {
+        log.info("Running unpaid order cleanup job");
 
         Instant cutoff = Instant.now().minus(15, MINUTES);
 
-        List<Order> orders =
+        Set<Order> orders =
                 orderRepository.findByStatusAndCreatedAtBefore(
                         OrderStatus.PENDING,
                         cutoff
                 );
 
+        log.info("Found {} expired orders", orders.size());
+
         for (Order order : orders) {
-            order.setStatus(OrderStatus.CANCELLED);
-            orderRepository.save(order);
+            order.setStatus(OrderStatus.EXPIRED);
         }
+
+        orderRepository.saveAll(orders);
     }
 }
