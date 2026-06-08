@@ -220,7 +220,17 @@ public class OrderService {
                 order.getTrackingToken()
         );
 
-        smsProviderService.sendSms(List.of(req.getCustomerPhone()), message);
+        String messageCash = String.format(
+                "Your order has been confirmed for CASH PAYMENT. Please prepare payment upon delivery or pickup. Order ID: %s. Track your order anytime using this token: %s. Thank you for choosing us!",
+                orderNumber,
+                order.getTrackingToken()
+        );
+
+        if (order.getPaymentMethod().equals(PaymentMethod.CASH)) {
+            smsProviderService.sendSms(List.of(req.getCustomerPhone()), messageCash);
+        } else {
+            smsProviderService.sendSms(List.of(req.getCustomerPhone()), message);
+        }
 
         order.calculateTotals();
         return order;
