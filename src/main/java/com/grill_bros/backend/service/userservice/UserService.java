@@ -223,48 +223,38 @@ public class UserService {
     }
 
     @Transactional
-    public String googleLoginSendOtp(
-            GoogleLoginRequest request
-    ) throws Exception {
+    public String googleLoginSendOtp(GoogleLoginRequest request) throws Exception {
 
-        var payload =
-                googleAuthService.verify(
-                        request.idToken()
-                );
+        var payload = googleAuthService.verify(request.idToken());
 
         String email = payload.getEmail();
-
-        Users user =
-                userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        if (!user.isAdminRole()) {
-            throw new AccessDeniedException(
-                    "Unauthorized"
-            );
-        }
-
         String googleId = payload.getSubject();
 
+        Users user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // OPTIONAL: remove this unless admin-only login is intended
+        // if (!user.isAdminRole()) {
+        //     throw new AccessDeniedException("Unauthorized");
+        // }
+
+        // Link Google account if not already linked
         if (user.getGoogleId() == null) {
             user.setGoogleId(googleId);
             userRepository.save(user);
         }
 
-        if (!googleId.equals(user.getGoogleId())) {
-            throw new AccessDeniedException(
-                    "Google account mismatch"
-            );
+        // Only enforce if already linked AND mismatch (security check)
+        if (user.getGoogleId() != null && !user.getGoogleId().equals(googleId)) {
+            throw new AccessDeniedException("Google account mismatch");
         }
 
         String otp = generateOtp();
 
         UserAuthenticationOtp loginOtp = new UserAuthenticationOtp();
-
         loginOtp.setEmail(email);
         loginOtp.setOtp(otp);
-        loginOtp.setExpiresAt(
-                Instant.now().plusSeconds(600)
-        );
+        loginOtp.setExpiresAt(Instant.now().plusSeconds(600));
 
         otpRepository.save(loginOtp);
 
