@@ -310,7 +310,7 @@ public class AuthController {
             @RequestBody GoogleLoginRequest request
     ) throws Exception {
         return ResponseEntity.ok(
-                userService.googleLoginSendOtp(request)
+                authenticationOtpService.googleLoginSendOtp(request)
         );
     }
 

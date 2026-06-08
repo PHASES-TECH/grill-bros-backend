@@ -7,6 +7,7 @@ import com.grill_bros.backend.exceptions.ResourceNotFoundException;
 import com.grill_bros.backend.exceptions.passwordexceptions.*;
 import com.grill_bros.backend.model.UserAuthenticationOtp;
 import com.grill_bros.backend.model.Users;
+import com.grill_bros.backend.records.GoogleLoginRequest;
 import com.grill_bros.backend.records.VerifyGoogleOtpRequest;
 import com.grill_bros.backend.repository.OtpRepository;
 import com.grill_bros.backend.repository.UserRepository;
@@ -14,6 +15,7 @@ import com.grill_bros.backend.service.smsservice.SmsProviderService;
 import com.grill_bros.backend.service.utilsservice.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +34,7 @@ public class AuthenticationOtpService {
     private final SmsProviderService smsProviderService;
     private final OtpRepository otpRepository;
     private final EmailService emailService;
+    private final GoogleAuthService googleAuthService;
 
     private static final int OTP_LENGTH = 6;
     private static final int OTP_EXPIRY_MINUTES = 5;
@@ -79,7 +82,7 @@ public class AuthenticationOtpService {
 
         smsProviderService.sendSms(List.of(phoneNumber), message);
 
-        emailService.sendOtpEmail(user.getEmail(), user.getFullName(), otp);
+//        emailService.sendOtpEmail(user.getEmail(), user.getFullName(), otp);
 
 //        log.info("Authentication OTP sent to user: {} (phone: {})", user.getId(), phoneNumber);
 
@@ -88,6 +91,52 @@ public class AuthenticationOtpService {
                 .phoneNumber(maskPhoneNumber(phoneNumber))
                 .expiresAt(otpRecord.getExpiresAt())
                 .build();
+    }
+
+    @Transactional
+    public String googleLoginSendOtp(GoogleLoginRequest request) throws Exception {
+
+        var payload = googleAuthService.verify(request.idToken());
+
+        String email = payload.getEmail();
+        String googleId = payload.getSubject();
+
+        Users user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // OPTIONAL: remove this unless admin-only login is intended
+        // if (!user.isAdminRole()) {
+        //     throw new AccessDeniedException("Unauthorized");
+        // }
+
+        // Link Google account if not already linked
+        if (user.getGoogleId() == null) {
+            user.setGoogleId(googleId);
+            userRepository.save(user);
+        }
+
+        // Only enforce if already linked AND mismatch (security check)
+        if (user.getGoogleId() != null && !user.getGoogleId().equals(googleId)) {
+            throw new AccessDeniedException("Google account mismatch");
+        }
+
+        String otp = generateOtp();
+
+        UserAuthenticationOtp otpRecord = UserAuthenticationOtp.builder()
+                .user(user)
+                .otp(otp)
+                .email(user.getEmail())
+                .expiresAt(Instant.now().plus(OTP_EXPIRY_MINUTES, ChronoUnit.MINUTES))
+                .isUsed(false)
+                .attemptCount(0)
+                .isLocked(false)
+                .build();
+
+        otpRepository.save(otpRecord);
+
+        emailService.sendOtpEmail(email, user.getFullName(), otp);
+
+        return "OTP sent successfully";
     }
 
     @Transactional

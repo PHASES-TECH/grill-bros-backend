@@ -33,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,8 +47,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final OtpRepository otpRepository;
     private final SmsProviderService smsProviderService;
-    private final GoogleAuthService googleAuthService;
-    private final EmailService emailService;
 
 
     @Autowired
@@ -220,47 +219,6 @@ public class UserService {
             // Catch any other authentication exceptions
             throw new InvalidCredentialsException();
         }
-    }
-
-    @Transactional
-    public String googleLoginSendOtp(GoogleLoginRequest request) throws Exception {
-
-        var payload = googleAuthService.verify(request.idToken());
-
-        String email = payload.getEmail();
-        String googleId = payload.getSubject();
-
-        Users user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        // OPTIONAL: remove this unless admin-only login is intended
-        // if (!user.isAdminRole()) {
-        //     throw new AccessDeniedException("Unauthorized");
-        // }
-
-        // Link Google account if not already linked
-        if (user.getGoogleId() == null) {
-            user.setGoogleId(googleId);
-            userRepository.save(user);
-        }
-
-        // Only enforce if already linked AND mismatch (security check)
-        if (user.getGoogleId() != null && !user.getGoogleId().equals(googleId)) {
-            throw new AccessDeniedException("Google account mismatch");
-        }
-
-        String otp = generateOtp();
-
-        UserAuthenticationOtp loginOtp = new UserAuthenticationOtp();
-        loginOtp.setEmail(email);
-        loginOtp.setOtp(otp);
-        loginOtp.setExpiresAt(Instant.now().plusSeconds(600));
-
-        otpRepository.save(loginOtp);
-
-        emailService.sendOtpEmail(email, user.getFullName(), otp);
-
-        return "OTP sent successfully";
     }
 
     private String generateOtp() {
