@@ -18,7 +18,7 @@ public interface OtpRepository extends JpaRepository<UserAuthenticationOtp, UUID
     );
 
     Optional<UserAuthenticationOtp> findByOtpAndEmailAndIsUsedFalseAndIsLockedFalse(
-            String email, String otp
+            String otp, String email
     );
 
     List<UserAuthenticationOtp> findByUserAndIsUsedFalseAndExpiresAtAfter(Users user, Instant instant);

@@ -180,7 +180,7 @@ public class AuthenticationOtpService {
     @Transactional
     public void verifyGoogleLoginOtp(VerifyGoogleOtpRequest request) {
 
-        UserAuthenticationOtp otpRecord = otpRepository.findByOtpAndEmailAndIsUsedFalseAndIsLockedFalse(request.email(), request.otp())
+        UserAuthenticationOtp otpRecord = otpRepository.findByOtpAndEmailAndIsUsedFalseAndIsLockedFalse(request.otp(), request.email())
                 .orElseThrow(() -> new InvalidOtpException("Invalid or expired OTP"));
 
         if (otpRecord.isUsed()) {
