@@ -30,7 +30,6 @@ public class UserAuthenticationOtp extends BaseEntity{
     @Column(nullable = false)
     private String otp;
 
-    @Column(nullable = false)
     private String phoneNumber;
 
     private String email;
