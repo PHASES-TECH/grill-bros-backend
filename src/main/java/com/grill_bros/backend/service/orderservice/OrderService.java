@@ -114,6 +114,7 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order"));
 
         OrderStatus previous = order.getStatus();
+
         try {
             order.transitionTo(req.getStatus());
         } catch (IllegalStateException e) {
@@ -142,7 +143,6 @@ public class OrderService {
 
         if (req.getStatus().equals(OrderStatus.COMPLETED)) {
             smsProviderService.sendSms(List.of(order.getCustomerPhone()), message);
-            receiptService.adminGenerateAndSendReceipt(id);
         }
 
         if (req.getStatus().equals(OrderStatus.CANCELLED)) {
