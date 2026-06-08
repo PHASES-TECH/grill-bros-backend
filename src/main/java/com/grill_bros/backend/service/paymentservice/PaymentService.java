@@ -49,10 +49,10 @@ public class PaymentService {
         var order = orderRepository.findById(req.getOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Order"));
 
-        if (order.getStatus() != OrderStatus.PENDING) {
+        if (order.getStatus() == OrderStatus.CANCELLED ||
+                order.getStatus() == OrderStatus.EXPIRED) {
             throw new InvalidStateTransitionException(
-                    "Cannot initiate payment for order " + order.getOrderNumber() +
-                            " — current status: " + order.getStatus());
+                    "Cannot pay for cancelled or expired order");
         }
 
         var existing = paymentRepository.findByOrder_Id(req.getOrderId());

@@ -72,16 +72,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/v1/auth/login/request-otp",
-                                "/api/v1/auth/login",
-                                "/api/v1/auth/login/verify-otp",
-                                "/api/v1/auth/register/admin",
-                                "/api/v1/auth/logout",
-                                "/api/v1/auth/register/verify-phone",
-                                "/api/v1/auth/refresh",
-                                "/api/v1/auth/forgot-password",
-                                "/api/v1/auth/password/verify-otp",
-                                "/api/v1/auth/reset-password").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/menu/**", "/api/v1/orders/track/{trackingToken}", "/api/v1/payments/callback").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/orders", "/api/v1/payments/initiate").permitAll()
                         .anyRequest().authenticated())

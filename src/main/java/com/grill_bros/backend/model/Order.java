@@ -102,7 +102,7 @@ public class Order extends BaseEntity {
         o.customerPhone = customerPhone;
         o.customerEmail = customerEmail;
         o.notes         = notes;
-        o.status        = OrderStatus.PENDING;
+        o.status        = paymentMethod == PaymentMethod.CASH ? OrderStatus.CONFIRMED: OrderStatus.PENDING;
         o.trackingToken = trackingToken;
         o.paymentMethod = paymentMethod;
         o.checkoutSessionId = checkoutSessionId;

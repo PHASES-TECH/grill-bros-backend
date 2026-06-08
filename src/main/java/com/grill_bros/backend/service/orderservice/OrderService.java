@@ -288,8 +288,7 @@ public class OrderService {
 
         for (Order order : orders) {
             order.setStatus(OrderStatus.EXPIRED);
+            orderRepository.save(order);
         }
-
-        orderRepository.saveAll(orders);
     }
 }
