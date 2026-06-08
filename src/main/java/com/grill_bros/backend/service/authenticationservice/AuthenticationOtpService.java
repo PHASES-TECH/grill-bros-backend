@@ -89,12 +89,13 @@ public class AuthenticationOtpService {
         return OtpResponse.builder()
                 .message("OTP sent successfully to your phone number")
                 .phoneNumber(maskPhoneNumber(phoneNumber))
+                .email(user.getEmail())
                 .expiresAt(otpRecord.getExpiresAt())
                 .build();
     }
 
     @Transactional
-    public String googleLoginSendOtp(GoogleLoginRequest request) throws Exception {
+    public OtpResponse googleLoginSendOtp(GoogleLoginRequest request) throws Exception {
 
         var payload = googleAuthService.verify(request.idToken());
 
@@ -136,7 +137,12 @@ public class AuthenticationOtpService {
 
         emailService.sendOtpEmail(email, user.getFullName(), otp);
 
-        return "OTP sent successfully";
+        return OtpResponse.builder()
+                .message("OTP sent successfully to your phone number")
+                .phoneNumber(maskPhoneNumber(user.getPhoneNumber()))
+                .email(user.getEmail())
+                .expiresAt(otpRecord.getExpiresAt())
+                .build();
     }
 
     @Transactional
@@ -174,7 +180,7 @@ public class AuthenticationOtpService {
     @Transactional
     public void verifyGoogleLoginOtp(VerifyGoogleOtpRequest request) {
 
-        UserAuthenticationOtp otpRecord = otpRepository.findTopByEmailAndUsedFalseOrderByCreatedAtDesc(request.email())
+        UserAuthenticationOtp otpRecord = otpRepository.findByOtpAndEmailAndIsUsedFalseAndIsLockedFalse(request.email(), request.otp())
                 .orElseThrow(() -> new InvalidOtpException("Invalid or expired OTP"));
 
         if (otpRecord.isUsed()) {

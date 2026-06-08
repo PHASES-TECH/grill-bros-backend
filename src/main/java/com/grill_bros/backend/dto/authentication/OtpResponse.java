@@ -10,5 +10,6 @@ import java.time.Instant;
 public class OtpResponse {
     private String message;
     private String phoneNumber;
+    private String email;
     private Instant expiresAt;
 }

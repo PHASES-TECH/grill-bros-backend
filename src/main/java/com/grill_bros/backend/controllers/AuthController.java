@@ -306,12 +306,10 @@ public class AuthController {
     }
 
     @PostMapping("/auth/google")
-    public ResponseEntity<?> googleLogin(
+    public ResponseEntity<ApiResponse> googleLogin(
             @RequestBody GoogleLoginRequest request
     ) throws Exception {
-        return ResponseEntity.ok(
-                authenticationOtpService.googleLoginSendOtp(request)
-        );
+        return ResponseEntity.ok(ApiResponse.ok(authenticationOtpService.googleLoginSendOtp(request)));
     }
 
     @PostMapping("/auth/google/verify-otp")
