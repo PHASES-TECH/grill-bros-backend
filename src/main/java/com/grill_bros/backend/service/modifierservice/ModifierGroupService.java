@@ -47,20 +47,20 @@ public class ModifierGroupService {
                                         "MenuItem with ID " + menuItemId + " not found")))
                 .toList();
 
-        ModifierGroup group = new ModifierGroup();
-        group.setName(req.getName());
-        group.setMenuItems(menuItems);
-        group.setRequired(req.isRequired());
-        group.setMinSelections(req.getMinSelections());
-        group.setMaxSelections(req.getMaxSelections());
+        ModifierGroup savedGroup = new ModifierGroup();
+        savedGroup.setName(req.getName());
+        savedGroup.setMenuItems(menuItems);
+        savedGroup.setRequired(req.isRequired());
+        savedGroup.setMinSelections(req.getMinSelections());
+        savedGroup.setMaxSelections(req.getMaxSelections());
+
+        groupRepo.save(savedGroup);
 
         for (MenuItem menuItem : menuItems) {
-            menuItem.getModifierGroups().add(group);
-            menuItemRepo.save(menuItem);
+            menuItem.getModifierGroups().add(savedGroup);
         }
 
-        groupRepo.save(group);
-        return ModifierGroupResponse.from(group);
+        return ModifierGroupResponse.from(savedGroup);
     }
 
     public List<ModifierGroupResponse> getModifierGroupsForMenuItem(UUID menuItemId) {
