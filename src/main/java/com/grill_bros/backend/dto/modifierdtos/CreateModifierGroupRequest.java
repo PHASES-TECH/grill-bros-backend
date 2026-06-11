@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -16,7 +17,7 @@ public class CreateModifierGroupRequest {
     private String name;
 
     @NotNull
-    private UUID menuItemId;
+    private List<UUID> menuItemIds;
 
     private boolean required = false;
 

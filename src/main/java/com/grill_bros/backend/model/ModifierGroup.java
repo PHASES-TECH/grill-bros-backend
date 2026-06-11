@@ -34,9 +34,8 @@ public class ModifierGroup extends BaseEntity {
     @Column(nullable = false)
     private int maxSelections = 1;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "menu_item_id", nullable = false)
-    private MenuItem menuItem;
+    @ManyToMany(mappedBy = "modifierGroups")
+    private List<MenuItem> menuItems = new ArrayList<>();
 
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
     private List<Modifier> modifiers = new ArrayList<>();

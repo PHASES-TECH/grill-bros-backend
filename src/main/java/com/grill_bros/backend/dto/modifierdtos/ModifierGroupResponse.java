@@ -1,5 +1,6 @@
 package com.grill_bros.backend.dto.modifierdtos;
 
+import com.grill_bros.backend.model.MenuItem;
 import com.grill_bros.backend.model.ModifierGroup;
 import lombok.Builder;
 import lombok.Data;
@@ -17,8 +18,7 @@ public class ModifierGroupResponse {
     private int minSelections;
     private int maxSelections;
 
-    private UUID menuItemId;
-    private String menuItemName;
+    private List<String> menuItemNames;
     private List<ModifierResponse> modifiers;
 
     public static ModifierGroupResponse from(ModifierGroup group) {
@@ -28,8 +28,7 @@ public class ModifierGroupResponse {
                 .required(group.isRequired())
                 .minSelections(group.getMinSelections())
                 .maxSelections(group.getMaxSelections())
-                .menuItemId(group.getMenuItem().getId())
-                .menuItemName(group.getMenuItem().getName())
+                .menuItemNames(group.getMenuItems().stream().map(MenuItem::getName).toList())
                 .modifiers(group.getModifiers() != null
                         ? group.getModifiers().stream()
                         .map(ModifierResponse::from)

@@ -55,7 +55,7 @@ public class ModifierService {
 
     public List<ModifierResponse> getModifiersForMenuItem(UUID menuItemId) {
         return groupRepo
-                .findByMenuItemId(menuItemId)
+                .findByMenuItems_Id(menuItemId)
                 .stream()
                 .flatMap(group -> group.getModifiers().stream())
                 .map(modifier -> ModifierResponse.builder()

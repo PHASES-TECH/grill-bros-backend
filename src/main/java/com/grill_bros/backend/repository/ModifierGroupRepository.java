@@ -9,5 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface ModifierGroupRepository extends JpaRepository<ModifierGroup, UUID> {
-    List<ModifierGroup> findByMenuItemId(UUID menuItemId);
+    List<ModifierGroup> findByMenuItems_Id(UUID menuItemId);
 }

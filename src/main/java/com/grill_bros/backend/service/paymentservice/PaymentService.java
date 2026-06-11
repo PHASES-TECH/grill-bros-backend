@@ -190,11 +190,12 @@ public class PaymentService {
 
         log.info("Processing Paystack webhook: event={} reference={}", eventType, reference);
 
-        String replayKey = "quickbite:webhook:seen:paystack:" + reference + ":" + eventType;
+        String replayKey = "grill-bros:webhook:seen:paystack:" + reference + ":" + eventType;
         if (cache.exists(replayKey)) {
             log.info("Duplicate webhook ignored: event={} reference={}", eventType, reference);
             return;
         }
+
         cache.setRaw(replayKey, "1", 3600); // TTL 1 hour
 
         switch (eventType) {

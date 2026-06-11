@@ -39,47 +39,34 @@ public class ModifierGroupService {
     @Transactional
     public ModifierGroupResponse createGroup(CreateModifierGroupRequest req) {
 
-        MenuItem menuItem = menuItemRepo.findById(req.getMenuItemId())
-                .orElseThrow(() -> new ResourceNotFoundException("MenuItem"));
+        List<MenuItem> menuItems = req.getMenuItemIds()
+                .stream()
+                .map(menuItemId -> menuItemRepo.findById(menuItemId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "MenuItem with ID " + menuItemId + " not found")))
+                .toList();
 
         ModifierGroup group = new ModifierGroup();
         group.setName(req.getName());
-        group.setMenuItem(menuItem);
+        group.setMenuItems(menuItems);
         group.setRequired(req.isRequired());
         group.setMinSelections(req.getMinSelections());
         group.setMaxSelections(req.getMaxSelections());
+
+        for (MenuItem menuItem : menuItems) {
+            menuItem.getModifierGroups().add(group);
+            menuItemRepo.save(menuItem);
+        }
 
         groupRepo.save(group);
         return ModifierGroupResponse.from(group);
     }
 
-    public List<ModifierResponse> getModifierGroupsForMenuItem(UUID menuItemId) {
-        List<ModifierGroup> modifierGroups = groupRepo.findByMenuItemId(menuItemId);
-
-        if (modifierGroups == null || modifierGroups.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<ModifierResponse> responseList = new ArrayList<>();
-
-        for (ModifierGroup group : modifierGroups) {
-            List<Modifier> modifiers = group.getModifiers();
-
-            if (modifiers == null || modifiers.isEmpty()) continue;
-
-            for (Modifier modifier : modifiers) {
-                ModifierResponse response = ModifierResponse.builder()
-                        .id(modifier.getId())
-                        .name(modifier.getName())
-                        .price(modifier.getPrice())
-                        .groupId(group.getId())
-                        .groupName(group.getName())
-                        .build();
-
-                responseList.add(response);
-            }
-        }
-
-        return responseList;
+    public List<ModifierGroupResponse> getModifierGroupsForMenuItem(UUID menuItemId) {
+        return groupRepo.findByMenuItems_Id(menuItemId)
+                .stream()
+                .map(ModifierGroupResponse::from)
+                .toList();
     }
 }
