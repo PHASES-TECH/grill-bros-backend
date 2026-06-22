@@ -7,14 +7,17 @@ import com.grill_bros.backend.exceptions.DuplicateResourceException;
 import com.grill_bros.backend.exceptions.ResourceNotFoundException;
 import com.grill_bros.backend.model.MenuCategory;
 import com.grill_bros.backend.model.MenuItem;
+import com.grill_bros.backend.records.PopularMenuItemResponse;
 import com.grill_bros.backend.repository.MenuCategoryRepository;
 import com.grill_bros.backend.repository.MenuItemRepository;
+import com.grill_bros.backend.repository.OrderItemRepository;
 import com.grill_bros.backend.service.cacheservice.CacheService;
 import com.grill_bros.backend.service.utilsservice.ImageUploadService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +37,7 @@ public class MenuService {
     private final MenuItemRepository itemRepository;
     private final CacheService cache;
     private final ImageUploadService imageUploadService;
+    private final OrderItemRepository orderItemRepository;
 
     public List<MenuItemResponse> getMenuItems() {
         return itemRepository.findAll()
@@ -160,20 +164,45 @@ public class MenuService {
 
     @Transactional
     public MenuItemResponse updateItem(UUID id, UpdateMenuItemRequest req) {
+
         MenuItem item = itemRepository.findById(id)
                 .filter(MenuItem::isActive)
                 .orElseThrow(() -> new ResourceNotFoundException("MenuItem"));
 
-        MenuCategory category = categoryRepository.findById(req.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("MenuCategory"));
+        if (req.getName() != null) {
+            item.setName(req.getName());
+        }
 
-        item.setName(req.getName());
-        item.setDescription(req.getDescription());
-        item.setPrice(req.getPrice());
-        item.setCategory(category);
-        item.setSortOrder(req.getSortOrder());
-        item.setTags(req.getTags() != null ? req.getTags() : List.of());
-        if (req.isAvailable()) item.markAvailable(); else item.markUnavailable();
+        if (req.getDescription() != null) {
+            item.setDescription(req.getDescription());
+        }
+
+        if (req.getPrice() != null) {
+            item.setPrice(req.getPrice());
+        }
+
+        if (req.getCategoryId() != null) {
+            MenuCategory category = categoryRepository.findById(req.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("MenuCategory"));
+
+            item.setCategory(category);
+        }
+
+        if (req.getSortOrder() != null) {
+            item.setSortOrder(req.getSortOrder());
+        }
+
+        if (req.getTags() != null) {
+            item.setTags(req.getTags());
+        }
+
+        if (req.getAvailable() != null) {
+            if (req.getAvailable()) {
+                item.markAvailable();
+            } else {
+                item.markUnavailable();
+            }
+        }
 
         if (req.getFile() != null && !req.getFile().isEmpty()) {
             String imageUrl = imageUploadService.upload(req.getFile());
@@ -181,8 +210,10 @@ public class MenuService {
         }
 
         MenuItem saved = itemRepository.save(item);
+
         evictMenuCaches();
         cache.evict(RedisKeys.menuItem(id.toString()));
+
         return MenuItemResponse.from(saved);
     }
 
@@ -211,12 +242,13 @@ public class MenuService {
         evictMenuCaches();
     }
 
-    // ── Cache helpers ─────────────────────────────────────────────────────────
+    public Page<PopularMenuItemResponse> getPopularItems(int limit) {
 
-    /**
-     * Any write to menu data invalidates all list-level caches.
-     * Individual item cache is evicted explicitly where relevant.
-     */
+        return orderItemRepository.findMostPopularItems(
+                PageRequest.of(0, limit)
+        );
+    }
+    
     private void evictMenuCaches() {
         cache.evict(RedisKeys.MENU_ALL_ACTIVE);
         cache.evict(RedisKeys.MENU_CATEGORIES);

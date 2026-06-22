@@ -127,7 +127,7 @@ public class OrderService {
                         previous, saved.getStatus()));
 
         String message = String.format(
-                "Your order has been completed! Your order ID is %s. You can track its status anytime.",
+                "Your Grill Bros order (%s) has been completed. Thank you for dining with us! We appreciate your patronage and look forward to serving you again.",
                 order.getOrderNumber()
         );
 
@@ -279,26 +279,19 @@ public class OrderService {
         return sb.toString();
     }
 
-    @Scheduled(
-            fixedDelay = 300000,
-            initialDelay = 60000
-    )
+    @Scheduled(fixedDelay = 300000, initialDelay = 60000)
+    @Transactional
     public void expireUnpaidOrders() {
         log.info("Running unpaid order cleanup job");
 
         Instant cutoff = Instant.now().minus(15, MINUTES);
 
-        Set<Order> orders =
-                orderRepository.findByStatusAndCreatedAtBefore(
-                        OrderStatus.PENDING,
-                        cutoff
-                );
+        int updated = orderRepository.bulkUpdateStatus(
+                OrderStatus.PENDING,
+                OrderStatus.EXPIRED,
+                cutoff
+        );
 
-        log.info("Found {} expired orders", orders.size());
-
-        for (Order order : orders) {
-            order.setStatus(OrderStatus.EXPIRED);
-            orderRepository.save(order);
-        }
+        log.info("Expired {} unpaid orders older than {}", updated, cutoff);
     }
 }

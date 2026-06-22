@@ -4,6 +4,7 @@ import com.grill_bros.backend.common.ApiResponse;
 import com.grill_bros.backend.common.PagedResponse;
 import com.grill_bros.backend.dto.AdminUserResponse;
 import com.grill_bros.backend.dto.menudtos.*;
+import com.grill_bros.backend.records.PopularMenuItemResponse;
 import com.grill_bros.backend.service.menuservice.MenuService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.annotation.security.PermitAll;
@@ -198,7 +199,7 @@ public class MenuController {
         );
     }
 
-    @PostMapping(value="/items", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/items", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Create a new menu item")
     public ResponseEntity<ApiResponse<MenuItemResponse>> createItem(
             @Valid @ModelAttribute CreateMenuItemRequest req
@@ -210,7 +211,7 @@ public class MenuController {
                 .body(ApiResponse.created(response));
     }
 
-    @PutMapping(value="/items/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PatchMapping(value = "/items/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Update a menu item")
     public ResponseEntity<ApiResponse<MenuItemResponse>> updateItem(
             @PathVariable UUID id,
@@ -246,4 +247,9 @@ public class MenuController {
         );
     }
 
+    @GetMapping("/popular")
+    public ResponseEntity<ApiResponse<Page<PopularMenuItemResponse>>> popularItems() {
+        Page<PopularMenuItemResponse> response = menuService.getPopularItems(10);
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
 }

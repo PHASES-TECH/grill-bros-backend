@@ -6,9 +6,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -29,6 +31,16 @@ public interface OrderRepository extends JpaRepository<Order, String>, JpaSpecif
     long countByCreatedAtBetween(Instant start, Instant end);
 
     Set<Order> findByStatusAndCreatedAtBefore(OrderStatus status, Instant date);
+
+
+    @Modifying
+    @Query("UPDATE Order o SET o.status = :newStatus WHERE o.status = :currentStatus AND o.createdAt < :cutoff")
+    @Transactional
+    int bulkUpdateStatus(
+            @Param("currentStatus") OrderStatus currentStatus,
+            @Param("newStatus")     OrderStatus newStatus,
+            @Param("cutoff")        Instant cutoff
+    );
 
     // In OrderRepository
     @Query("""
@@ -156,8 +168,6 @@ public interface OrderRepository extends JpaRepository<Order, String>, JpaSpecif
             @Param("from") Instant from,
             @Param("to") Instant to
     );
-
-    // ── Phase 2 placeholder ───────────────────────────────────────────────────
 
     Page<Order> findAllByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 }

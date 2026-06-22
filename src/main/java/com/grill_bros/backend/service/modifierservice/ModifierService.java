@@ -31,6 +31,8 @@ public class ModifierService {
                         .id(modifier.getId())
                         .name(modifier.getName())
                         .price(modifier.getPrice())
+                        .groupName(modifier.getGroup().getName())
+                        .groupId(modifier.getGroup().getId())
                         .build()
                 );
     }

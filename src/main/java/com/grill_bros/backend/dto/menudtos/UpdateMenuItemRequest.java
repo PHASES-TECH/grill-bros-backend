@@ -28,9 +28,9 @@ public class UpdateMenuItemRequest {
 
     private MultipartFile file;
 
-    private int sortOrder;
+    private Integer sortOrder;
 
     private List<String> tags;
 
-    private boolean available;
+    private Boolean available;
 }
