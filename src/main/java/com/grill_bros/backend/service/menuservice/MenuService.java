@@ -5,6 +5,7 @@ import com.grill_bros.backend.cache.RedisKeys;
 import com.grill_bros.backend.dto.menudtos.*;
 import com.grill_bros.backend.exceptions.DuplicateResourceException;
 import com.grill_bros.backend.exceptions.ResourceNotFoundException;
+import com.grill_bros.backend.exceptions.passwordexceptions.BadRequestException;
 import com.grill_bros.backend.model.MenuCategory;
 import com.grill_bros.backend.model.MenuItem;
 import com.grill_bros.backend.records.PopularMenuItemResponse;
@@ -39,14 +40,18 @@ public class MenuService {
     private final ImageUploadService imageUploadService;
     private final OrderItemRepository orderItemRepository;
 
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
+
     public List<MenuItemResponse> getMenuItems() {
         return itemRepository.findAll()
                 .stream()
                 .map(MenuItemResponse::from)
                 .toList();
     }
+
     public List<CategoryResponse> getActiveCategories() {
-        return cache.get(RedisKeys.MENU_CATEGORIES, new TypeReference<List<CategoryResponse>>() {})
+        return cache.get(RedisKeys.MENU_CATEGORIES, new TypeReference<List<CategoryResponse>>() {
+                })
                 .orElseGet(() -> {
                     List<CategoryResponse> result = categoryRepository
                             .findAllByActiveTrueOrderByDisplayOrderAsc()
@@ -116,7 +121,8 @@ public class MenuService {
 
         category.setName(req.getName());
         category.setDisplayOrder(req.getDisplayOrder());
-        if (req.isActive()) category.activate(); else category.deactivate();
+        if (req.isActive()) category.activate();
+        else category.deactivate();
 
         MenuCategory saved = categoryRepository.save(category);
         evictMenuCaches();
@@ -205,6 +211,11 @@ public class MenuService {
         }
 
         if (req.getFile() != null && !req.getFile().isEmpty()) {
+            if (req.getFile().getSize() > MAX_FILE_SIZE) {
+                throw new BadRequestException(
+                        "Image size must not exceed 5MB"
+                );
+            }
             String imageUrl = imageUploadService.upload(req.getFile());
             item.setImageUrl(imageUrl);
         }
@@ -223,7 +234,8 @@ public class MenuService {
                 .filter(MenuItem::isActive)
                 .orElseThrow(() -> new ResourceNotFoundException("MenuItem"));
 
-        if (available) item.markAvailable(); else item.markUnavailable();
+        if (available) item.markAvailable();
+        else item.markUnavailable();
         MenuItem saved = itemRepository.save(item);
 
         // Evict only the specific item and the list caches
@@ -248,7 +260,7 @@ public class MenuService {
                 PageRequest.of(0, limit)
         );
     }
-    
+
     private void evictMenuCaches() {
         cache.evict(RedisKeys.MENU_ALL_ACTIVE);
         cache.evict(RedisKeys.MENU_CATEGORIES);
